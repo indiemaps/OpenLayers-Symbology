@@ -2,15 +2,21 @@
 * @requires ol.thematic.js
 */
 
-OpenLayers.Thematic.Choropleth = OpenLayers.Class( OpenLayers.Thematic.ThematicBase, 
+ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase, 
 {
 	
+	colors : null,
+	method : null,
+	numClasses : 5,
 	
+	defaultSymbolizer : { 'fillOpacity' : 1 },
 	
+	initialize : function( map, options )
+	{
+		ol.thematic.LayerBase.prototype.initialize.apply( this, arguments );
+	},
 	
-	
-	
-	CLASS_NAME: "OpenLayers.Thematic.Choropleth"
+	CLASS_NAME: "ol.thematic.Choropleth"
 });
 
 
