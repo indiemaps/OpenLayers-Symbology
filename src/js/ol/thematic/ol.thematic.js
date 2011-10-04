@@ -59,6 +59,50 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		this.layer.addFeatures(format.read(doc));
 	},
 	
+	addOptions : function( newOptions )
+	{
+		if ( newOptions )
+		{
+			if ( !this.options )
+			{
+				this.options = {};
+			}
+			
+			OpenLayers.Util.extend( this.options, newOptions );
+			OpenLayers.Util.extend( this, newOptions );
+		}
+	},
+	
+	extendStyle: function( rules, symbolizer, context ) 
+	{
+		var style = this.layer.styleMap.styles['default'];
+		// replace rules entirely - the geostat object takes control
+		// on the style rules of the "default" render intent
+		if (rules) 
+		{
+			style.rules = rules;
+		}
+		if (symbolizer) 
+		{
+			style.setDefaultStyle( OpenLayers.Util.applyDefaults( symbolizer, style.defaultStyle ) );
+		}
+		if (context) 
+		{
+			if (!style.context) 
+			{
+				style.context = {};
+			}
+			OpenLayers.Util.extend(style.context, context);
+		}
+	},
+	
+	applyClassification : function( options )
+	{
+		this.layer.renderer.clear();
+		this.layer.redraw();
+		this.layer.setVisibility( true );
+	},
+	
 	
 	CLASS_NAME: "ol.thematic.LayerBase"
 	
