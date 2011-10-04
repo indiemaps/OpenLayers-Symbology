@@ -23,5 +23,15 @@ ol.thematic.Cartogram = OpenLayers.Class( ol.thematic.LayerBase,
 		
 	},
 	
+	setClassification : function()
+	{
+		
+	},
+	
+	applyClassification : function()
+	{
+		
+	},
+	
 	CLASS_NAME: "ol.thematic.Cartogram"
 });
