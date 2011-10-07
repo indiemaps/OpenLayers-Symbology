@@ -1,15 +1,16 @@
 /**
-* @requires ol.thematic.js
+* @requires ol.thematic.js, colorbrewer.js
 */
 
 ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase, 
 {
 	
-	colors : null,
-	method : null,
-	numClasses : 5,
-	
-	defaultSymbolizer : { 'fillOpacity' : 1 },
+	colorScheme 		: 'YlGn',
+	method 				: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
+	numClasses 			: 5,
+	defaultSymbolizer 	: { 'fillOpacity' : 1 },
+	classification 		: null,
+	colorInterpolation 	: null,
 	
 	initialize : function( map, options )
 	{
@@ -30,34 +31,42 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	                this.setClassification();
 	                
 	        // new colors?
-	      	} else if (newOptions.colors && (
-	                       !newOptions.colors[0].equals(oldOptions.colors[0]) ||
-	                       !newOptions.colors[1].equals(oldOptions.colors[1]))) 
+	      	} else if (newOptions.colorScheme && newOptions.colorScheme != oldOptions.colorScheme )
 	    	{
-	                this.createColorInterpolation();
+	        	this.createColorInterpolation();
 	    	}
 		}
 	},
 	
+	
+	createColorInterpolation: function() {
+		var numColors = this.classification.bins.length;
+		this.colorInterpolation = colorbrewer[ this.colorScheme ][ numColors ];
+	},
+
+
 	setClassification : function() 
 	{
+		alert('donkey dong');
 		var values = [];
 		var features = this.layer.features;
 		for (var i = 0; i < features.length; i++) 
 		{
 			values.push(features[i].attributes[this.indicator]);
 		}
-		var dist = new mapfish.GeoStat.Distribution(values);
+		var dist = new ol.thematic.Distribution(values);
 		this.classification = dist.classify(
 			this.method,
 			this.numClasses,
 			null
 		);
+		
 		this.createColorInterpolation();
 	},
 	
 	applyClassification : function( options )
 	{
+		alert( 'apply classssy' );
 		this.updateOptions(options);
 		var boundsArray = this.classification.getBoundsArray();
 		var rules = new Array(boundsArray.length - 1);
@@ -65,7 +74,10 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		{
 			var rule = new OpenLayers.Rule(
 			{
+				symbolizer : { fillColor : "#000" },
+				/*
 				symbolizer: {fillColor: this.colorInterpolation[i].toHexString()},
+				*/
 				filter: new OpenLayers.Filter.Comparison(
 				{
 					type: OpenLayers.Filter.Comparison.BETWEEN,
@@ -77,7 +89,9 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			rules[i] = rule;
 		}
 		this.extendStyle(rules);
-		mapfish.GeoStat.prototype.applyClassification.apply(this, arguments);
+		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
+		
+		alert('applied: ' + this.layer.features);
 	},
 	
 	CLASS_NAME: "ol.thematic.Choropleth"

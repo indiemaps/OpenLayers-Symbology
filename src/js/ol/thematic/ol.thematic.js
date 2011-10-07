@@ -1,10 +1,21 @@
+Array.max = function( array ){
+    return Math.max.apply( Math, array );
+};
+Array.min = function( array ){
+    return Math.min.apply( Math, array );
+};
+Array.sum = function( array ){
+	for(var i=0,sum=0;i<array.length;sum+=array[i++]);
+	return sum;
+};
+
 /*
  * 
  * base class for all thematic symbologies
  * 
  */
 
-if ( !ol ) ol = {};
+if ( !ol ) var ol = {};
 
 ol.thematic = {};
 
@@ -14,12 +25,23 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	layer : null,
 	format : null,
 	url : null,
+	
+	requestSuccess: function(request) {},
+	
+	indicator : null,
+	
+	/* TODO this should be implemented in all symbologies 
+	 * 
+	 * ex: function( feature ) { return feature.population / feature.area; };
+	 */
+	indicatorFunction : null,
+	
 	defaultSymbolizer : {},
 	
 	initialize : function( map, options )
 	{
 		this.map = map;
-		this.options = options;
+		this.addOptions( options );
 		
 		if ( !this.layer )
 		{
@@ -38,6 +60,8 @@ ol.thematic.LayerBase = OpenLayers.Class(
 			});
 			map.addLayer( layer );
 			this.layer = layer;
+			
+			alert( 'layer: ' + layer );
 		}
 		
 		if ( this.url )
@@ -56,7 +80,14 @@ ol.thematic.LayerBase = OpenLayers.Class(
 			doc = request.responseText;
 		}
 		var format = this.format || new OpenLayers.Format.GeoJSON();
+		
 		this.layer.addFeatures(format.read(doc));
+		this.requestSuccess(request);
+	},
+	
+	updateOptions : function( newOptions )
+	{
+		this.addOptions( newOptions );
 	},
 	
 	addOptions : function( newOptions )
@@ -99,6 +130,8 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		this.layer.renderer.clear();
 		this.layer.redraw();
 		this.layer.setVisibility( true );
+		
+		alert( 'vizzy' );
 	},
 	
 	
@@ -123,8 +156,8 @@ ol.thematic.Distribution = OpenLayers.Class({
     initialize: function(values) {
         this.values = values;
         this.nbVal = values.length;
-        this.minVal = this.nbVal ? mapfish.Util.min(this.values) : 0;
-        this.maxVal = this.nbVal ? mapfish.Util.max(this.values) : 0;
+        this.minVal = this.nbVal ? Array.min( values ) : 0;
+        this.maxVal = this.nbVal ? Array.max( values ) : 0;
     },
     
     classifyWithBounds: function(bounds) {
@@ -149,15 +182,14 @@ ol.thematic.Distribution = OpenLayers.Class({
                 i++;
             }
         }
-        
-        binCount[nbBins - 1] = this.nbVal - mapfish.Util.sum(binCount);
+        binCount[nbBins - 1] = this.nbVal - Array.sum( binCount );
         
         for (var i = 0; i < nbBins; i++) {
             var label = bounds[i].toFixed(3) + ' - ' + bounds[i + 1].toFixed(3);
-            bins[i] = new mapfish.GeoStat.Bin(binCount[i], label, bounds[i], bounds[i + 1],
+            bins[i] = new ol.thematic.Bin(binCount[i], label, bounds[i], bounds[i + 1],
                 i == (nbBins - 1));
         }
-        return new mapfish.GeoStat.Classification(bins);
+        return new ol.thematic.Classification(bins);
     },
     
     classifyByEqIntervals: function(nbBins) {
@@ -200,13 +232,13 @@ ol.thematic.Distribution = OpenLayers.Class({
             nbBins = this.sturgesRule();
         }
         switch (method) {
-        case mapfish.GeoStat.Distribution.CLASSIFY_WITH_BOUNDS:
+        case ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS:
             classification = this.classifyWithBounds(bounds);
             break;
-        case mapfish.GeoStat.Distribution.CLASSIFY_BY_EQUAL_INTERVALS :
+        case ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS :
             classification = this.classifyByEqIntervals(nbBins);
             break;
-        case mapfish.GeoStat.Distribution.CLASSIFY_BY_QUANTILS :
+        case ol.thematic.Distribution.CLASSIFY_BY_QUANTILS :
             classification = this.classifyByQuantils(nbBins);
             break;
         default:
