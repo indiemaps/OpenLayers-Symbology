@@ -1,0 +1,99 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Choropleth example</title>
+		
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<style type="text/css">
+		
+			div#map {
+				width: 800px;
+				height: 600px;
+				
+				border: 2px solid #09c;
+			}
+			
+		</style>
+		
+		
+		<!-- external libraries ( d3.js, polymaps, and HEX.js ) -->
+		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
+		
+		<script type="text/javascript">
+			var map, choroLayer,
+				url = 'http://geocommons.com/overlays/157260.kml',
+				indicator = 'unemployed';
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	map.setCenter(new OpenLayers.LonLat(0, 0), 4);
+            	
+            	//TODO: remove, just for testing
+            	createRefLayer();
+            	
+            	// createChoroLayer();
+			};
+			
+			function createRefLayer()
+			{
+				var layer = new OpenLayers.Layer.Vector( "KML", {
+					projection : new OpenLayers.Projection("EPSG:4326"),
+		            strategies: [ new OpenLayers.Strategy.Fixed() ],
+		            protocol: new OpenLayers.Protocol.HTTP( {
+		                url: url,
+		                format: new OpenLayers.Format.KML( {
+		                    extractStyles: false, 
+		                    extractAttributes: true,
+		                    maxDepth: 2
+		                } )
+		            } ),
+					style : { 'fillColor' : '#dddddd', 'fillOpacity' : 1, 'strokeColor' : '#666666', 'strokeWidth' : 1 }
+		        } );
+				
+				
+				map.addLayer( layer );
+			};
+			
+			function createChoroLayer()
+			{
+				choroLayer = new ol.thematic.Choropleth( map, {
+					'url' : url,
+					'indicator' : indicator,
+					'format' : new OpenLayers.Format.KML(),
+					'requestSuccess' : function( request )
+					{
+						this.updateOptions( {
+							method : ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
+							colorScheme : 'GnBu'
+						});
+						this.applyClassification();
+					}
+				});
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Choropleth example</h1>
+		
+		<div id="map"></div>
+	</body>
+	
+</html>
