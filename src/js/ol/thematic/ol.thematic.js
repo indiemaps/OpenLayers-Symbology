@@ -34,7 +34,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	 * 
 	 * ex: function( feature ) { return feature.population / feature.area; };
 	 */
-	indicatorFunction : null,
+	valuator : null,
 	
 	defaultSymbolizer : {},
 	
@@ -60,8 +60,6 @@ ol.thematic.LayerBase = OpenLayers.Class(
 			});
 			map.addLayer( layer );
 			this.layer = layer;
-			
-			alert( 'layer: ' + layer );
 		}
 		
 		if ( this.url )
@@ -82,6 +80,17 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		var format = this.format || new OpenLayers.Format.GeoJSON();
 		
 		this.layer.addFeatures(format.read(doc));
+		
+		var feature;
+		for ( var i = 0; i < this.layer.features.length; i++ )
+		{
+			feature = this.layer.features[i];
+			if ( feature.attributes[ this.indicator ].value )
+			{
+				feature.attributes[ this.indicator ] = feature.attributes[ this.indicator ].value;
+			}
+		}
+		
 		this.requestSuccess(request);
 	},
 	
@@ -130,8 +139,6 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		this.layer.renderer.clear();
 		this.layer.redraw();
 		this.layer.setVisibility( true );
-		
-		alert( 'vizzy' );
 	},
 	
 	

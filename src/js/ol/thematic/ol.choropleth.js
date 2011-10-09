@@ -8,6 +8,10 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	colorScheme 		: 'YlGn',
 	method 				: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
 	numClasses 			: 5,
+	
+	// TODO: implement user-set breaks array
+	breaks				: null,
+	
 	defaultSymbolizer 	: { 'fillOpacity' : 1 },
 	classification 		: null,
 	colorInterpolation 	: null,
@@ -47,7 +51,6 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 
 	setClassification : function() 
 	{
-		alert('donkey dong');
 		var values = [];
 		var features = this.layer.features;
 		for (var i = 0; i < features.length; i++) 
@@ -66,18 +69,15 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	
 	applyClassification : function( options )
 	{
-		alert( 'apply classssy' );
 		this.updateOptions(options);
 		var boundsArray = this.classification.getBoundsArray();
+		
 		var rules = new Array(boundsArray.length - 1);
 		for (var i = 0; i < boundsArray.length -1; i++) 
 		{
 			var rule = new OpenLayers.Rule(
 			{
-				symbolizer : { fillColor : "#000" },
-				/*
-				symbolizer: {fillColor: this.colorInterpolation[i].toHexString()},
-				*/
+				symbolizer: {fillColor: this.colorInterpolation[i]},
 				filter: new OpenLayers.Filter.Comparison(
 				{
 					type: OpenLayers.Filter.Comparison.BETWEEN,
@@ -86,12 +86,12 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 					upperBoundary: boundsArray[i + 1]
 				})
 			});
+			
+			console.log( i );
 			rules[i] = rule;
 		}
 		this.extendStyle(rules);
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
-		
-		alert('applied: ' + this.layer.features);
 	},
 	
 	CLASS_NAME: "ol.thematic.Choropleth"

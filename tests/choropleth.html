@@ -13,14 +13,35 @@
 				height: 600px;
 				
 				border: 2px solid #09c;
+				float: left;
+			}
+			
+			div#controls {
+				margin-left: 15px;
+				float: left;
+			}
+			
+			div.controlArea {
+				margin-left: 30px;
+				margin-top: 45px;
+			}
+			
+			div.control {
+				margin-left: 30px;
+				margin-bottom: 10px;
+			}
+			
+			div.control select {
+				margin-left: 30px;
 			}
 			
 		</style>
 		
 		
-		<!-- external libraries ( d3.js, polymaps, and HEX.js ) -->
+		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
 		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
@@ -28,8 +49,9 @@
 		
 		<script type="text/javascript">
 			var map, choroLayer,
-				url = 'http://geocommons.com/overlays/157260.kml',
-				indicator = 'unemployed';
+				url = '../data/json/county_unemployment.geo.json',
+				indicator = 'unemployment rate',
+				format = null;
 			
 			function init()
 			{
@@ -39,12 +61,16 @@
                     {layers: 'basic'},
                     {isBaseLayer: true} );
             	map.addLayer(layer);
+            	
+            	// TODO: remove, replace with zoom to bounds
             	map.setCenter(new OpenLayers.LonLat(0, 0), 4);
             	
-            	//TODO: remove, just for testing
-            	createRefLayer();
+            	// TODO: remove, just for testing
+            	// createRefLayer();
             	
-            	// createChoroLayer();
+            	createChoroLayer();
+            	
+            	populateControls();
 			};
 			
 			function createRefLayer()
@@ -54,15 +80,10 @@
 		            strategies: [ new OpenLayers.Strategy.Fixed() ],
 		            protocol: new OpenLayers.Protocol.HTTP( {
 		                url: url,
-		                format: new OpenLayers.Format.KML( {
-		                    extractStyles: false, 
-		                    extractAttributes: true,
-		                    maxDepth: 2
-		                } )
+		                format: new OpenLayers.Format.GeoJSON()
 		            } ),
-					style : { 'fillColor' : '#dddddd', 'fillOpacity' : 1, 'strokeColor' : '#666666', 'strokeWidth' : 1 }
+					style : { 'fillColor' : '#dddddd', 'fillOpacity' : 1, 'strokeColor' : '#666666' }
 		        } );
-				
 				
 				map.addLayer( layer );
 			};
@@ -72,7 +93,6 @@
 				choroLayer = new ol.thematic.Choropleth( map, {
 					'url' : url,
 					'indicator' : indicator,
-					'format' : new OpenLayers.Format.KML(),
 					'requestSuccess' : function( request )
 					{
 						this.updateOptions( {
@@ -80,10 +100,20 @@
 							colorScheme : 'GnBu'
 						});
 						this.applyClassification();
-					}
+						
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+					},
+					
+					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 }
 				});
 			};
 			
+			
+			
+			function populateControls()
+			{
+				
+			};
 			
 		</script>
 	</head>
@@ -94,6 +124,45 @@
 		<h1>OpenLayers-Symbology Choropleth example</h1>
 		
 		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>classes</h3>
+				
+				<div class="control">
+					<h4>number of classes</h4>
+					<select></select>
+				</div>
+				
+				<div class="control">
+					<h4>classification method</h4>
+					<select></select>
+				</div>
+				
+				<div class="control">
+					<h4>breaks</h4>
+					<div id="breaksSlider"></div>
+				</div>
+			</div>
+			
+			
+			<div class="controlArea">
+				<h3>colors</h3>
+				
+				<div class="control">
+					<h4>data nature</h4>
+					<select></select>
+				</div>
+				
+				<div class="control">
+					<h4>color scheme</h4>
+					<ul id="colorSchemes"></ul>
+				</div>
+				
+			</div>
+		</div>
 	</body>
 	
 </html>
