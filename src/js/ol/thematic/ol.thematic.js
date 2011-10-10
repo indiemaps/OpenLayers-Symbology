@@ -196,6 +196,7 @@ ol.thematic.Distribution = OpenLayers.Class({
             bins[i] = new ol.thematic.Bin(binCount[i], label, bounds[i], bounds[i + 1],
                 i == (nbBins - 1));
         }
+        
         return new ol.thematic.Classification(bins);
     },
     
@@ -210,7 +211,7 @@ ol.thematic.Distribution = OpenLayers.Class({
         return this.classifyWithBounds(bounds);           
     },
     
-    classifyByQuantils: function(nbBins) {
+    classifyByQuantile: function(nbBins) {
         var values = this.values;
         values.sort(function(a,b) {return a-b;});
         var binSize = Math.round(this.values.length / nbBins);
@@ -226,6 +227,7 @@ ol.thematic.Distribution = OpenLayers.Class({
             }
             bounds.push(values[values.length - 1]);
         }
+        
         return this.classifyWithBounds(bounds);
     },
     
@@ -238,18 +240,19 @@ ol.thematic.Distribution = OpenLayers.Class({
         if (!nbBins) {
             nbBins = this.sturgesRule();
         }
+        
         switch (method) {
-        case ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS:
-            classification = this.classifyWithBounds(bounds);
-            break;
-        case ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS :
-            classification = this.classifyByEqIntervals(nbBins);
-            break;
-        case ol.thematic.Distribution.CLASSIFY_BY_QUANTILS :
-            classification = this.classifyByQuantils(nbBins);
-            break;
-        default:
-            OpenLayers.Console.error("unsupported or invalid classification method");
+	        case ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS:
+	            classification = this.classifyWithBounds(bounds);
+	            break;
+	        case ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS:
+	            classification = this.classifyByEqIntervals(nbBins);
+	            break;
+	        case ol.thematic.Distribution.CLASSIFY_BY_QUANTILE :
+	            classification = this.classifyByQuantile(nbBins);
+	            break;
+	        default:
+	            OpenLayers.Console.error("unsupported or invalid classification method");
         }
         return classification;
     },
@@ -259,11 +262,24 @@ ol.thematic.Distribution = OpenLayers.Class({
 
 });
 
-ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS = 0;
 
-ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS = 1;
+ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS = 'classify with bounds';
+ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS = 'classify by equal intervals';
+ol.thematic.Distribution.CLASSIFY_BY_QUANTILE = 'classify by quantile';
+ol.thematic.Distribution.CLASSIFY_MANUAL = 'classify manual';
 
-ol.thematic.Distribution.CLASSIFY_BY_QUANTILE = 2;
+ol.thematic.Distribution.CLASSIFICATION_METHODS = {
+	'equal intervals' : {
+		'pretty' : 'Equal Interval',
+		'value' : ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS
+	},
+	
+	'quantiles' : {
+		'pretty' : 'Quantile',
+		'value' : ol.thematic.Distribution.CLASSIFY_BY_QUANTILE
+	}
+};
+
 
 ol.thematic.Bin = OpenLayers.Class({
 	label: null,

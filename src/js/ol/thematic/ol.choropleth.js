@@ -6,11 +6,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 {
 	
 	colorScheme 		: 'YlGn',
+	classed				: true,
 	method 				: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
 	numClasses 			: 5,
 	
-	// TODO: implement user-set breaks array
-	breaks				: null,
+	classBreaks			: null,
 	
 	defaultSymbolizer 	: { 'fillOpacity' : 1 },
 	classification 		: null,
@@ -43,7 +43,8 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	},
 	
 	
-	createColorInterpolation: function() {
+	createColorInterpolation: function() 
+	{		
 		var numColors = this.classification.bins.length;
 		this.colorInterpolation = colorbrewer[ this.colorScheme ][ numColors ];
 	},
@@ -61,7 +62,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		this.classification = dist.classify(
 			this.method,
 			this.numClasses,
-			null
+			this.classBreaks
 		);
 		
 		this.createColorInterpolation();
@@ -87,7 +88,6 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 				})
 			});
 			
-			console.log( i );
 			rules[i] = rule;
 		}
 		this.extendStyle(rules);

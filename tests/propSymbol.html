@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>OpenLayers-Symbology Choropleth example</title>
+		<title>OpenLayers-Symbology Proportional Symbol example</title>
 		
 		
 		<!-- styles -->
@@ -40,18 +40,17 @@
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
-		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 				
 		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
-		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
 		
 		<script type="text/javascript">
 			var map, choroLayer,
-				url = '../data/json/county_unemployment.geo.json',
-				indicator = 'unemployment rate',
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
 				format = null;
 			
 			function init()
@@ -63,11 +62,13 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	createChoroLayer();
+            	createPropLayer();
+            	
 			};
 			
-			function createChoroLayer()
+			function createPropLayer()
 			{
+				/*
 				choroLayer = new ol.thematic.Choropleth( map, {
 					'url' : url,
 					'indicator' : indicator,
@@ -88,6 +89,7 @@
 					
 					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 }
 				});
+				*/
 			};
 			
 			
@@ -149,9 +151,6 @@
 
 				var $schemeSelect = $('select#schemes');
 				$schemeSelect.val( choroLayer.colorScheme );
-				
-				var $classedInput = $('input#classed');
-				$classedInput.prop( "checked", choroLayer.classed );
 			};
 			
 			function wireControls()
@@ -160,30 +159,6 @@
 				{
 					updateChoroLayer();
 				});
-				
-				// classed / unclassed
-				
-				$( 'input#classed' ).change( function( event )
-				{
-					updateClassed();
-				});
-			};
-			
-			function updateClassed()
-			{
-				var classed = $( 'input#classed' ).prop( "checked" );
-				
-				var options = { 
-					'classed' : classed
-				};
-								
-				// ui stuff
-				
-				$( 'div#numClasses select' ).prop( 'disabled', !classed );
-				$( 'div#classMethods select' ).prop( 'disabled', !classed );
-				
-				choroLayer.updateOptions( options );
-				choroLayer.applyClassification();
 			};
 			
 			function updateChoroLayer()
@@ -206,7 +181,7 @@
 
 
 	<body onload="init()">
-		<h1>OpenLayers-Symbology Choropleth example</h1>
+		<h1>OpenLayers-Symbology Proportional Symbol example</h1>
 		
 		<div id="map"></div>
 		
@@ -220,16 +195,9 @@
 					<h4>attribute</h4>
 					<select id="attributes"></select>
 				</div>
-			</div>
-			
-			<div class="controlArea">
-				<h3>classification</h3>
+
 				
 				<div class="control">
-					<input id="classed" type="checkbox">Classed</input>
-				</div>
-				
-				<div class="control" id="numClasses">
 					<h4>number of classes</h4>
 					<select id="numClasses">
 						<option value="3">3</option>
@@ -242,7 +210,7 @@
 					</select>
 				</div>
 				
-				<div class="control" id="classMethods">
+				<div class="control">
 					<h4>classification method</h4>
 					<select id="classMethods"></select>
 				</div>

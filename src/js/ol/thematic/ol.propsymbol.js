@@ -9,6 +9,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	minVal : null,
 	maxVal : null,
 	
+	// TODO:
 	/* for classed / graduated symbols */
 	method : null,
 	numClasses : 5,
@@ -36,8 +37,9 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		{
 			values.push(features[i].attributes[this.indicator]);
 		}
+		
 		// TODO add Distribution class somewhere
-		var dist = new mapfish.GeoStat.Distribution(values);
+		var dist = new ol.thematic.Distribution(values);
 		this.minVal = dist.minVal;
 		this.maxVal = dist.maxVal;
 	},
