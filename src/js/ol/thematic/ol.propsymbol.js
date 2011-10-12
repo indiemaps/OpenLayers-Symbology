@@ -19,6 +19,25 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		ol.thematic.LayerBase.prototype.initialize.apply( this, arguments );
 	},
 	
+	addFeatures : function( features )
+	{
+		var featuresToAdd = [];
+		
+		var feature, geometry, attributes;
+		for ( var i = 0; i < features.length; i++ )
+		{
+			feature = features[i],
+			geometry = feature.geometry,
+			attributes = feature.attributes;
+			
+			feature = new OpenLayers.Feature.Vector( geometry.getCentroid(), attributes );
+			
+			featuresToAdd.push( feature );
+		}
+		
+		this.layer.addFeatures( featuresToAdd );
+	},
+	
 	updateOptions : function( newOptions )
 	{
 		var oldOptions = OpenLayers.Util.extend({}, this.options);
@@ -38,13 +57,12 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 			values.push(features[i].attributes[this.indicator]);
 		}
 		
-		// TODO add Distribution class somewhere
 		var dist = new ol.thematic.Distribution(values);
 		this.minVal = dist.minVal;
 		this.maxVal = dist.maxVal;
 	},
 	
-	applyClassification : function()
+	applyClassification : function( options )
 	{
 		if (options && options.resetClassification) 
 		{
@@ -62,6 +80,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 			{'pointRadius': '${calculateRadius}'},
 			{'calculateRadius': calculateRadius}
 		);
+		
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	

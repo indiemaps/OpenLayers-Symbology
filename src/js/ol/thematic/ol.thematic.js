@@ -25,6 +25,9 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	layer : null,
 	format : null,
 	url : null,
+	features : null,
+	
+	classed : false,
 	
 	requestSuccess: function(request) {},
 	
@@ -53,10 +56,12 @@ ol.thematic.LayerBase = OpenLayers.Class(
 					)
 				)
 			});
-			var layer = new OpenLayers.Layer.Vector( 'thematic', {
-				'displayInLayerSwitcher' : false,
-				'visibility' : false,
-				'styleMap' : styleMap
+			var layer = new OpenLayers.Layer.Vector( 'thematic', 
+			{
+				projection : new OpenLayers.Projection("EPSG:4326"),
+				displayInLayerSwitcher : false,
+				visibility : false,
+				styleMap : styleMap
 			});
 			map.addLayer( layer );
 			this.layer = layer;
@@ -79,19 +84,32 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		}
 		var format = this.format || new OpenLayers.Format.GeoJSON();
 		
-		this.layer.addFeatures(format.read(doc));
+		format.externalProjection = new OpenLayers.Projection("EPSG:4326");
+		format.internalProjection = this.map.getProjectionObject();
 		
-		var feature;
-		for ( var i = 0; i < this.layer.features.length; i++ )
+		this.features = format.read( doc );
+		
+		var feature, attribute;
+		for ( var i = 0; i < this.features.length; i++ )
 		{
-			feature = this.layer.features[i];
-			if ( feature.attributes[ this.indicator ].value )
+			feature = this.features[i];
+			
+			$.each( feature.attributes, function( key, value )
 			{
-				feature.attributes[ this.indicator ] = feature.attributes[ this.indicator ].value;
-			}
+				if ( value && value.value )
+				{
+					feature.attributes[ key ] = value.value;
+				}
+			});
 		}
 		
+		this.addFeatures( this.features );
 		this.requestSuccess(request);
+	},
+	
+	addFeatures : function( features )
+	{
+		this.layer.addFeatures( features );
 	},
 	
 	updateOptions : function( newOptions )

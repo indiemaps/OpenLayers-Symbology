@@ -48,7 +48,7 @@
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
 		
 		<script type="text/javascript">
-			var map, choroLayer,
+			var map, propLayer,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
 				format = null;
@@ -68,28 +68,26 @@
 			
 			function createPropLayer()
 			{
-				/*
-				choroLayer = new ol.thematic.Choropleth( map, {
+				propLayer = new ol.thematic.ProportionalSymbol( map, {
 					'url' : url,
-					'indicator' : indicator,
 					'requestSuccess' : function( request )
 					{
 						this.updateOptions( {
-							method : ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
-							colorScheme : 'GnBu'
+							'indicator' : indicator
 						});
+						
 						this.applyClassification();
 						
-						map.zoomToExtent( this.layer.getDataExtent(), true );
+						map.zoomToExtent( this.layer.getDataExtent(), false );
 						
 						populateControls();
 						updateControls();
 						wireControls();
 					},
 					
-					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 }
+					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'fillColor' : '#0099cc' }
 				});
-				*/
+				
 			};
 			
 			
@@ -98,7 +96,7 @@
 				// attributes
 				// we'll just base this off the first feature
 				var $attributeSelect = $('select#attributes');
-				var feature = choroLayer.layer.features[0];
+				var feature = propLayer.layer.features[0];
 				
 				var attributes = feature.attributes,
 					option;
@@ -126,52 +124,39 @@
 				// TODO: breaks
 				
 				
-				// color schemes
-				var $colorSelect = $('select#schemes');
-												
-				$.each( colorbrewer, function( key, value )
-				{
-					var option = '<option value="' + key + '">' + key + '</option>';
-					
-					$colorSelect.append( option );
-				});
 				
 			};
 			
 			function updateControls()
 			{
 				var $attributeSelect = $('select#attributes');
-				$attributeSelect.val( choroLayer.indicator );
+				$attributeSelect.val( propLayer.indicator );
 				
 				var $numClassesSelect = $('select#numClasses');
-				$numClassesSelect.val( choroLayer.numClasses );
+				$numClassesSelect.val( propLayer.numClasses );
 				
 				var $classMethodSelect = $('select#classMethods');
-				$classMethodSelect.val( choroLayer.method );
-
-				var $schemeSelect = $('select#schemes');
-				$schemeSelect.val( choroLayer.colorScheme );
+				$classMethodSelect.val( propLayer.method );
 			};
 			
 			function wireControls()
 			{
 				$( 'div.control select' ).change( function( event )
 				{
-					updateChoroLayer();
+					updatePropLayer();
 				});
 			};
 			
-			function updateChoroLayer()
+			function updatePropLayer()
 			{
 				var options = {
 					indicator : $('select#attributes').val(),
 					numClasses : $('select#numClasses').val(),
-					colorScheme : $('select#schemes').val(),
 					method : $('select#classMethods').val()
 				};
 				
-				choroLayer.updateOptions( options );
-				choroLayer.applyClassification();
+				propLayer.updateOptions( options );
+				propLayer.applyClassification();
 			};
 			
 			
@@ -217,16 +202,6 @@
 
 			</div>
 			
-			
-			<div class="controlArea">
-				<h3>colors</h3>
-				
-				<div class="control">
-					<h4>color scheme</h4>
-					<select id="schemes"></select>
-				</div>
-				
-			</div>
 		</div>
 	</body>
 	

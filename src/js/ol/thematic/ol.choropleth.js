@@ -42,7 +42,6 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		}
 	},
 	
-	
 	createColorInterpolation: function() 
 	{		
 		var numColors = this.classification.bins.length;

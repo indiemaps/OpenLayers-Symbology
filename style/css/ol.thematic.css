@@ -1,0 +1,26 @@
+div#map {
+	width: 800px;
+	height: 800px;
+	border: 2px solid #09c;
+	float: left;
+}
+div#controls {
+	margin-left: 15px;
+	float: left;
+}
+div.controlArea {
+	margin-left: 30px;
+	margin-bottom: 35px;
+}
+div.control {
+	margin-left: 30px;
+	margin-bottom: 10px;
+}
+div.control select {
+	margin-left: 30px;
+}
+input#dotValue {
+	width: 100px;
+	margin-right: 5px;
+	margin-left: 5px;
+}
