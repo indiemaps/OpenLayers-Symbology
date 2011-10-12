@@ -1,0 +1,173 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Dot Density example</title>
+		
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<style type="text/css">
+		
+			div#map {
+				width: 800px;
+				height: 800px;
+				
+				border: 2px solid #09c;
+				float: left;
+			}
+			
+			div#controls {
+				margin-left: 15px;
+				float: left;
+			}
+			
+			div.controlArea {
+				margin-left: 30px;
+				margin-bottom: 35px;
+			}
+			
+			div.control {
+				margin-left: 30px;
+				margin-bottom: 10px;
+			}
+			
+			div.control select {
+				margin-left: 30px;
+			}
+			
+		</style>
+		
+		
+		<!-- external libraries ( ol, colorbrewer, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+				
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.dotdensity.js"></script>
+		
+		<script type="text/javascript">
+			var map, dotLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createDotLayer();
+            	
+			};
+			
+			function createDotLayer()
+			{
+				dotLayer = new ol.thematic.DotDensity( map, {
+					'url' : url,
+					'requestSuccess' : function( request )
+					{
+						alert( 
+						'bout to update'
+						);
+						this.updateOptions( {
+							'indicator' : indicator
+						});
+						
+						this.applyClassification();
+						
+						map.zoomToExtent( this.layer.getDataExtent(), false );
+						
+						populateControls();
+						updateControls();
+						wireControls();
+					},
+					
+					defaultSymbolizer : { 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'pointRadius' : 1 }
+				});
+				
+			};
+			
+			
+			function populateControls()
+			{
+				// attributes
+				// we'll just base this off the first feature
+				var $attributeSelect = $('select#attributes');
+				var feature = dotLayer.layer.features[0];
+				
+				var attributes = feature.attributes,
+					option;
+								
+				$.each( attributes, function( key, value )
+				{
+					// see if value is a number
+					if ( !isNaN( value ) )
+					{
+						option = '<option value="' + key + '">' + key + '</option>';
+						$attributeSelect.append( option );
+					}
+				});
+				
+			};
+			
+			function updateControls()
+			{
+				var $attributeSelect = $('select#attributes');
+				$attributeSelect.val( dotLayer.indicator );
+			};
+			
+			function wireControls()
+			{
+				$( 'div.control select' ).change( function( event )
+				{
+					updateDotLayer();
+				});
+			};
+			
+			function updateDotLayer()
+			{
+				var options = {
+					indicator : $('select#attributes').val()
+				};
+				
+				dotLayer.updateOptions( options );
+				dotLayer.applyClassification();
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Dot Density example</h1>
+		
+		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>data</h3>
+				
+				<div class="control">
+					<h4>attribute</h4>
+					<select id="attributes"></select>
+				</div>
+
+				
+				
+
+			</div>
+			
+		</div>
+	</body>
+	
+</html>

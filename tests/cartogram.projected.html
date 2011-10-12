@@ -1,0 +1,182 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Noncontiguous Cartogram Projected example</title>
+		
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, proj4js, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="../lib/proj4js-combined.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
+		
+		<script type="text/javascript">
+			var map, cartoLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null;
+				
+			Proj4js.defs["MY_ALBERS"] = "+proj=aea +lat_1=32 +lat_2=58 +lat_0=45 +lon_0=-97 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
+				
+			
+			function init()
+			{
+				
+				map = new OpenLayers.Map( {
+					div : 'map',
+					projection: new OpenLayers.Projection("MY_ALBERS"), 
+					maxResolution: 100000,
+					maxExtent: new OpenLayers.Bounds( -18040096,-22672290,18040096,22672290 )
+				} );
+				
+			    // Empty base layer
+				map.addLayer( new OpenLayers.Layer("",{isBaseLayer: true}) );
+				  
+				createCartogramLayer();
+			};
+			
+			function createCartogramLayer()
+			{
+				cartoLayer = new ol.thematic.Cartogram( map, {
+					'url' : url,
+					'requestSuccess' : function( request )
+					{
+						this.updateOptions( {
+							'indicator' : indicator
+						});
+						this.applyClassification();
+						
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						populateControls();
+						updateControls();
+						wireControls();
+					},
+					
+					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'fillColor' : 0 }
+				});
+			};
+			
+			
+			function populateControls()
+			{
+				// attributes
+				// we'll just base this off the first feature
+				var $attributeSelect = $('select#attributes');
+				var feature = cartoLayer.layer.features[0];
+				
+				var attributes = feature.attributes,
+					option;
+								
+				$.each( attributes, function( key, value )
+				{
+					// see if value is a number
+					if ( !isNaN( value ) )
+					{
+						option = '<option value="' + key + '">' + key + '</option>';
+						$attributeSelect.append( option );
+					}
+				});
+				
+			};
+			
+			function updateControls()
+			{
+				var $attributeSelect = $('select#attributes');
+				$attributeSelect.val( cartoLayer.indicator );
+				
+				var $classedInput = $('input#classed');
+				$classedInput.prop( "checked", cartoLayer.classed );
+				
+				updateClassed();
+			};
+			
+			function wireControls()
+			{
+				$( 'div.control select' ).change( function( event )
+				{
+					updateCartogramLayer();
+				});
+				
+				$( 'input#classed' ).change( function( event )
+				{
+					updateClassed();
+				});
+			};
+			
+			function updateClassed()
+			{
+				var classed = $( 'input#classed' ).prop( "checked" );
+				
+				$( 'div#numClasses select' ).prop( 'disabled', !classed );
+				$( 'div#classMethods select' ).prop( 'disabled', !classed );
+			};
+			
+			function updateCartogramLayer()
+			{
+				var options = {
+					indicator : $('select#attributes').val()
+				};
+				
+				cartoLayer.updateOptions( options );
+				cartoLayer.applyClassification();
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Noncontiguous Cartogram Projected example</h1>
+		
+		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>data</h3>
+				
+				<div class="control">
+					<h4>attribute</h4>
+					<select id="attributes"></select>
+				</div>
+			</div>
+			
+			<div class="controlArea">
+				<h3>classification</h3>
+				
+				<div class="control">
+					<input id="classed" type="checkbox">Classed</input>
+				</div>
+				
+				<div class="control" id="numClasses">
+					<h4>number of classes</h4>
+					<select id="numClasses">
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
+						<option value="9">9</option>
+					</select>
+				</div>
+				
+				<div class="control" id="classMethods">
+					<h4>classification method</h4>
+					<select id="classMethods"></select>
+				</div>
+
+			</div>
+		</div>
+	</body>
+	
+</html>

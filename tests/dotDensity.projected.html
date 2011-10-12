@@ -1,0 +1,172 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Dot Density Projected example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, proj4js, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="../lib/proj4js-combined.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.dotdensity.js"></script>
+		
+		<script type="text/javascript">
+			var map, dotLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null;
+				
+			Proj4js.defs["MY_ALBERS"] = "+proj=aea +lat_1=32 +lat_2=58 +lat_0=45 +lon_0=-97 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
+				
+			
+			function init()
+			{
+				
+				map = new OpenLayers.Map( {
+					div : 'map',
+					projection: new OpenLayers.Projection("MY_ALBERS"), 
+					maxResolution: 100000,
+					maxExtent: new OpenLayers.Bounds( -18040096,-22672290,18040096,22672290 )
+				} );
+				
+			    // Empty base layer
+				map.addLayer( new OpenLayers.Layer("",{isBaseLayer: true}) );
+				  
+				createDotLayer();
+			};
+			
+			function createDotLayer()
+			{
+				dotLayer = new ol.thematic.DotDensity( map, {
+					'url' : url,
+					'requestSuccess' : function( request )
+					{
+						this.updateOptions( {
+							'indicator' : indicator
+						});
+						this.applyClassification();
+						
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						populateControls();
+						updateControls();
+						wireControls();
+					},
+					
+					defaultSymbolizer : { 'pointRadius' : 1, 'fillOpacity' : 1, 'fillColor' : '#000000', 'strokeWidth' : 0 }
+				});
+			};
+			
+			
+			function populateControls()
+			{
+				// attributes
+				// we'll just base this off the first feature
+				var $attributeSelect = $('select#attributes');
+				var feature = dotLayer.features[0];
+				
+				var attributes = feature.attributes,
+					option;
+								
+				$.each( attributes, function( key, value )
+				{
+					// see if value is a number
+					if ( !isNaN( value ) )
+					{
+						option = '<option value="' + key + '">' + key + '</option>';
+						$attributeSelect.append( option );
+					}
+				});
+				
+			};
+			
+			function updateControls()
+			{
+				var $attributeSelect = $('select#attributes');
+				$attributeSelect.val( dotLayer.indicator );
+				
+				
+				$( 'input#dotValue' ).val( dotLayer.dotValue );
+				$( 'span#dotUnits' ).html( dotLayer.indicator );
+			};
+			
+			function wireControls()
+			{
+				$( 'div.control select' ).change( function( event )
+				{
+					updateDotLayer();
+				});
+				
+				$( 'form#dotValue' ).submit( function( event )
+				{
+					var val = $( 'input#dotValue' ).val();
+					
+					
+					if ( !isNaN( val ) )
+					{
+						updateDotLayer();
+					}
+					else
+					{
+						$( 'input#dotValue' ).val( dotLayer.dotValue );
+					}
+					
+					
+					return false;
+				});
+				
+			};
+			
+			
+			function updateDotLayer()
+			{
+				var options = {
+					indicator : $('select#attributes').val(),
+					dotValue : $('input#dotValue').val()
+				};
+				
+				dotLayer.updateOptions( options );
+				dotLayer.applyClassification();
+				
+				$( 'span#dotUnits' ).html( dotLayer.indicator );
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Dot Density Projected example</h1>
+		
+		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>data</h3>
+				
+				<div class="control">
+					<h4>attribute</h4>
+					<select id="attributes"></select>
+				</div>
+				
+				<div class="control">
+					<h4>dot value</h4>
+					<form id="dotValue">
+						<span>1 dot = </span><input id="dotValue" type="text" /><span id="dotUnits"></span>
+					</form>
+				</div>
+			</div>
+			
+		</div>
+	</body>
+	
+</html>
