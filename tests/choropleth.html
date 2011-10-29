@@ -2,49 +2,16 @@
 	<head>
 		<title>OpenLayers-Symbology Choropleth example</title>
 		
-		
 		<!-- styles -->
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
-		
-		<style type="text/css">
-		
-			div#map {
-				width: 800px;
-				height: 800px;
-				
-				border: 2px solid #09c;
-				float: left;
-			}
-			
-			div#controls {
-				margin-left: 15px;
-				float: left;
-			}
-			
-			div.controlArea {
-				margin-left: 30px;
-				margin-bottom: 35px;
-			}
-			
-			div.control {
-				margin-left: 30px;
-				margin-bottom: 10px;
-			}
-			
-			div.control select {
-				margin-left: 30px;
-			}
-			
-		</style>
-		
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
 		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 				
-		
 		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
 		
@@ -69,24 +36,19 @@
 			function createChoroLayer()
 			{
 				choroLayer = new ol.thematic.Choropleth( map, {
-					'url' : url,
-					'indicator' : indicator,
-					'requestSuccess' : function( request )
+					url 		: url,
+					indicator 	: indicator,
+					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
+					colorScheme : 'GnBu',
+					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 },
+					requestSuccess 		: function( request )
 					{
-						this.updateOptions( {
-							method : ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
-							colorScheme : 'GnBu'
-						});
-						this.applyClassification();
-						
 						map.zoomToExtent( this.layer.getDataExtent(), true );
 						
 						populateControls();
 						updateControls();
 						wireControls();
-					},
-					
-					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 }
+					}
 				});
 			};
 			
@@ -111,14 +73,17 @@
 					}
 				});
 				
-				
 				var $classMethodSelect = $('select#classMethods');
 				
-				$.each( ol.thematic.Distribution.CLASSIFICATION_METHODS, function( key, value )
+				$.each( ol.thematic.Distribution, function( key, value )
 				{
-					option = '<option value="' + value.value + '">' + value.pretty + '</option>';
-					$classMethodSelect.append( option );
+					if ( typeof( value ) == 'string' )
+					{
+						option = '<option value="' + value + '">' + value + '</option>';
+						$classMethodSelect.append( option );
+					}
 				});
+				
 				
 				// TODO: breaks
 				

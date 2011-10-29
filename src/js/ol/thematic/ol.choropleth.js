@@ -3,18 +3,16 @@
 */
 
 ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase, 
-{
-	
-	colorScheme 		: 'YlGn',
-	classed				: true,
-	method 				: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
-	numClasses 			: 5,
-	
-	classBreaks			: null,
-	
-	defaultSymbolizer 	: { 'fillOpacity' : 1 },
-	classification 		: null,
+{	
+	/* choropleth specifics */
+	colors				: null, 					// a user-settable array of color values to be used for classes (or unclassed)
+	colorScheme 		: 'YlGn', 					// a ColorBrewer color scheme abbreviation
 	colorInterpolation 	: null,
+	
+	
+	/* ol.thematic.LayerBase properties */
+	defaultSymbolizer 	: { 'fillOpacity' : 1 },
+	classed				: true,
 	
 	initialize : function( map, options )
 	{
@@ -23,19 +21,34 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	
 	updateOptions : function( newOptions )
 	{
+		// snag a copy of the current options
 		var oldOptions = OpenLayers.Util.extend( {}, this.options );
+		
+		// call superclass method, merge new options with existing
 		this.addOptions( newOptions );
+		
+		
 		if ( newOptions )
 		{
+			// new distribution?
+			if ( newOptions.indicator != oldOptions.indicator )
+			{
+				this.updateDistribution();
+			}
+			
 			// new classification?
-			if (newOptions.method != oldOptions.method ||
-	                newOptions.indicator != oldOptions.indicator ||
-	                newOptions.numClasses != oldOptions.numClasses) 
-	     	{
-	                this.setClassification();
-	                
-	        // new colors?
-	      	} else if (newOptions.colorScheme && newOptions.colorScheme != oldOptions.colorScheme )
+			if 
+			(	newOptions.method 		!= oldOptions.method ||
+	            newOptions.indicator 	!= oldOptions.indicator ||
+	            newOptions.numClasses 	!= oldOptions.numClasses 
+	        )
+	        {
+	        	this.updateClassification();
+	      	} 
+	      	
+	      	// new colors?
+	      	else if 
+	      	( newOptions.colorScheme && newOptions.colorScheme != oldOptions.colorScheme )
 	    	{
 	        	this.createColorInterpolation();
 	    	}
@@ -45,53 +58,139 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	createColorInterpolation: function() 
 	{		
 		var numColors = this.classification.bins.length;
-		this.colorInterpolation = colorbrewer[ this.colorScheme ][ numColors ];
+		
+		if ( this.colors == null || this.colors.length < numColors )
+		{
+			this.colorInterpolation = colorbrewer[ this.colorScheme ][ numColors ];
+		}
+		else
+		{
+			this.colorInterpolation = this.colors.concat();
+		}
 	},
 
 
-	setClassification : function() 
+	updateClassification : function() 
 	{
-		var values = [];
-		var features = this.layer.features;
-		for (var i = 0; i < features.length; i++) 
-		{
-			values.push(features[i].attributes[this.indicator]);
-		}
-		var dist = new ol.thematic.Distribution(values);
-		this.classification = dist.classify(
-			this.method,
-			this.numClasses,
-			this.classBreaks
-		);
+		ol.thematic.LayerBase.prototype.updateClassification.apply( this );
 		
-		this.createColorInterpolation();
+		if ( this.classed )
+		{
+			this.createColorInterpolation();
+		}
 	},
 	
 	applyClassification : function( options )
 	{
 		this.updateOptions(options);
-		var boundsArray = this.classification.getBoundsArray();
 		
-		var rules = new Array(boundsArray.length - 1);
-		for (var i = 0; i < boundsArray.length -1; i++) 
+		var rules, symbolizer, context;
+		
+		if ( this.classed )
 		{
-			var rule = new OpenLayers.Rule(
+			var boundsArray = this.classification.getBoundsArray();
+			rules = new Array(boundsArray.length - 1);
+			for (var i = 0; i < boundsArray.length -1; i++) 
 			{
-				symbolizer: {fillColor: this.colorInterpolation[i]},
-				filter: new OpenLayers.Filter.Comparison(
+				var rule = new OpenLayers.Rule(
 				{
-					type: OpenLayers.Filter.Comparison.BETWEEN,
-					property: this.indicator,
-					lowerBoundary: boundsArray[i],
-					upperBoundary: boundsArray[i + 1]
-				})
-			});
-			
-			rules[i] = rule;
+					symbolizer: {fillColor: this.colorInterpolation[i]},
+					filter: new OpenLayers.Filter.Comparison(
+					{
+						type: OpenLayers.Filter.Comparison.BETWEEN,
+						property: this.indicator,
+						lowerBoundary: boundsArray[i],
+						upperBoundary: boundsArray[i + 1]
+					})
+				});
+				
+				rules[i] = rule;
+			}
 		}
-		this.extendStyle(rules);
+		// unclassed
+		else
+		{
+			var triColors;
+			
+			if ( this.colors == null || this.colors.length < 2 )
+			{
+				var classNumToUse = 7;
+				triColors = 
+				[ 
+					OpenLayers.Rico.Color.createFromRGB( colorbrewer[ this.colorScheme ][ classNumToUse ][ 0 ] ), 
+					OpenLayers.Rico.Color.createFromRGB( colorbrewer[ this.colorScheme ][ classNumToUse ][ Math.round((classNumToUse-1)/2) ] ), 
+					OpenLayers.Rico.Color.createFromRGB( colorbrewer[ this.colorScheme ][ classNumToUse ][ classNumToUse - 1 ] ) 
+				];
+			}
+			else
+			{
+				// we don't know what format the user's colors are in
+				var createFunction = this.colors[0].substr(0,3) == 'rgb' ? OpenLayers.Rico.Color.createFromRGB : OpenLayers.Rico.Color.createFromHex;
+				
+				triColors = 
+				[
+					createFunction( this.colors[0] ),
+					createFunction( this.colors[ Math.round( ( this.colors.length - 1 ) / 2 ) ] ),
+					createFunction( this.colors[ this.colors.length - 1 ] )
+				];
+			}
+						
+			symbolizer = {
+				fillColor : "${getColor}"
+			};
+					
+			var dist = this.distribution,
+				ind = this.indicator;
+			
+			context = {
+				getColor : function( feature )
+				{
+					var val = feature.attributes[ ind ],
+						inFirstHalf = ( val < ( .5 * dist.range + dist.minVal ) ),
+						c1 = inFirstHalf ? triColors[0] : triColors[1],
+						c2 = inFirstHalf ? triColors[1] : triColors[2],
+						amt = ( val - ( inFirstHalf ? dist.minVal : ( .5 * dist.range + dist.minVal ) ) ) / ( .5 * dist.range );
+					
+					var color = OpenLayers.Rico.Color.lerpColor( c1, c2, amt ).asRGB();
+					return color;
+				}
+			};
+		}
+		
+		this.extendStyle(rules, symbolizer, context);
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	
 	CLASS_NAME: "ol.thematic.Choropleth"
 });
+
+OpenLayers.Rico.Color.createFromRGB = function( rgb )
+{
+	var digits = /(.*?)rgb\(\s*(\d+)\s*,\s*(\d+)\s*,(\d+)\s*\)/.exec( rgb );
+	var r = parseInt( digits[2] ),
+		g = parseInt( digits[3] ),
+		b = parseInt( digits[4] );
+		
+	return new OpenLayers.Rico.Color( r, g, b );
+};
+
+OpenLayers.Rico.lerp = function( value1, value2, amt )
+{
+	return (value2 - value1) * amt + value1;
+};
+
+OpenLayers.Rico.Color.lerpColor = function( c1, c2, amt )
+{
+	var r1 = c1.rgb.r,
+		r2 = c2.rgb.r,
+		g1 = c1.rgb.g,
+		g2 = c2.rgb.g,
+		b1 = c1.rgb.b,
+		b2 = c2.rgb.b;
+		
+	var r3 = Math.round( OpenLayers.Rico.lerp( r1, r2, amt ) ),
+		g3 = Math.round( OpenLayers.Rico.lerp( g1, g2, amt ) ),
+		b3 = Math.round( OpenLayers.Rico.lerp( b1, b2, amt ) );
+	
+	return new OpenLayers.Rico.Color( r3, g3, b3 );
+};

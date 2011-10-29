@@ -66,8 +66,6 @@ ol.thematic.Cartogram = OpenLayers.Class( ol.thematic.LayerBase,
         	desiredScale = Math.sqrt( desiredArea / area ); 
         	feature.geometry.resize( desiredScale, centroid );
 		};
-		
-		alert( 'applied bitch' );
 				
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
