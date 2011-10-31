@@ -164,6 +164,18 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	CLASS_NAME: "ol.thematic.Choropleth"
 });
 
+ol.thematic.Choropleth.createColorSchemeRepresentation = function( choropleth, div )
+{
+	
+	// create initial representation
+	
+	
+	
+	// make it update itself
+	
+	
+};
+
 OpenLayers.Rico.Color.createFromRGB = function( rgb )
 {
 	var digits = /(.*?)rgb\(\s*(\d+)\s*,\s*(\d+)\s*,(\d+)\s*\)/.exec( rgb );

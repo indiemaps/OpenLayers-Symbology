@@ -3,19 +3,24 @@
 		<title>OpenLayers-Symbology Choropleth example</title>
 		
 		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="ext-js/resources/css/ext-all.css" />
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
 		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
-				
+		<script type="text/javascript" src="ext-js/bootstrap.js"></script>
+		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
 		
 		<script type="text/javascript">
+		
+			Ext.require('Ext.slider.*');
+			
 			var map, choroLayer,
 				url = '../data/json/county_unemployment.geo.json',
 				indicator = 'unemployment rate',
@@ -84,8 +89,23 @@
 					}
 				});
 				
+				// create self-updating color scheme representation
+				// ol.thematic.Choropleth.createColorSchemeRepresentation( choroLayer, 'div#colorScheme' );		
 				
-				// TODO: breaks
+				// class breaks
+				
+				var slider = new Ext.slider.Multi( {
+					renderTo: 'classBreaks-slider',
+			        hideLabel: false,
+			        
+			        width: 300,
+			        
+			        minValue: choroLayer.distribution.minVal,
+			        maxValue: choroLayer.distribution.maxVal/*,
+			        values: choroLayer.classification.getBoundsArray()*/
+				});
+				
+				slider.values = choroLayer.classification.getBoundsArray();
 				
 				
 				// color schemes
@@ -209,6 +229,13 @@
 				<div class="control" id="classMethods">
 					<h4>classification method</h4>
 					<select id="classMethods"></select>
+				</div>
+				
+				<div class="control" id="legend">
+					<h4>the legend is the key</h4>
+					
+					<div id="colorScheme"></div>
+					<div id="classBreaks-slider"></div>
 				</div>
 
 			</div>
