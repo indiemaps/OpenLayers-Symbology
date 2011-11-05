@@ -40,7 +40,8 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			if 
 			(	newOptions.method 		!= oldOptions.method ||
 	            newOptions.indicator 	!= oldOptions.indicator ||
-	            newOptions.numClasses 	!= oldOptions.numClasses 
+	            newOptions.numClasses 	!= oldOptions.numClasses ||
+	            newOptions.classBreaks 	!= null
 	        )
 	        {
 	        	this.updateClassification();
@@ -89,7 +90,17 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		if ( this.classed )
 		{
 			var boundsArray = this.classification.getBoundsArray();
-			rules = new Array(boundsArray.length - 1);
+			
+			rules = [];
+			
+			// default rule
+			var rule = new OpenLayers.Rule(
+			{
+				symbolizer: this.defaultSymbolizer
+			});
+				
+			rules.push( rule );
+			
 			for (var i = 0; i < boundsArray.length -1; i++) 
 			{
 				var rule = new OpenLayers.Rule(
@@ -104,7 +115,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 					})
 				});
 				
-				rules[i] = rule;
+				rules.push( rule );
 			}
 		}
 		// unclassed
@@ -164,17 +175,6 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	CLASS_NAME: "ol.thematic.Choropleth"
 });
 
-ol.thematic.Choropleth.createColorSchemeRepresentation = function( choropleth, div )
-{
-	
-	// create initial representation
-	
-	
-	
-	// make it update itself
-	
-	
-};
 
 OpenLayers.Rico.Color.createFromRGB = function( rgb )
 {

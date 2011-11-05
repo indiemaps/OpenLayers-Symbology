@@ -11,6 +11,25 @@ Array.sum = function( array ){
 	for(var i=0,sum=0;i<array.length;sum+=array[i++]);
 	return sum;
 };
+Array.equalsInOrder = function( arr1, arr2 )
+{
+	if ( arr1.length != arr2.length )
+	{
+		return false;
+	}
+	
+	var i = -1;
+	while ( ++i < arr1.length )
+	{
+		if ( arr1[i] != arr2[i] )
+		{ 
+			return false;
+		}
+	}
+	
+	return true;
+};
+
 
 /**
  * if 'ol' doesn't exist, make it exist
@@ -32,7 +51,9 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	format : null,
 	url : null,
 	features : null,
+	
 	requestSuccess: function(request) {},
+	updateSuccess : function() {},
 	valuator : null,
 	defaultSymbolizer : {},
 	
@@ -45,7 +66,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	classed 	: false,
 	method 		: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
 	numClasses 	: 5,
-	classBreaks	: null,
+	classBreaks	: null, /* an array of user-settable class breaks (must contain numClasses+1 values in ascending order) */
 		
 	initialize : function( map, options )
 	{
@@ -147,7 +168,8 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		var style = this.layer.styleMap.styles['default'];
 		if (rules) 
 		{
-			style.addRules( rules );
+			//style.addRules( rules );
+			style.rules = rules;
 		}
 		if (symbolizer) 
 		{
@@ -193,6 +215,8 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		this.layer.renderer.clear();
 		this.layer.redraw();
 		this.layer.setVisibility( true );
+		
+		this.updateSuccess();
 	},
 	
 	

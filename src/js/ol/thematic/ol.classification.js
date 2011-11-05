@@ -122,7 +122,6 @@ ol.thematic.Distribution = OpenLayers.Class({
 ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS = 'classify with bounds';
 ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS = 'classify by equal intervals';
 ol.thematic.Distribution.CLASSIFY_BY_QUANTILE = 'classify by quantile';
-ol.thematic.Distribution.CLASSIFY_MANUAL = 'classify manual';
 
 
 ol.thematic.Bin = OpenLayers.Class({

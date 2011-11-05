@@ -22,9 +22,11 @@
 			Ext.require('Ext.slider.*');
 			
 			var map, choroLayer,
-				url = '../data/json/county_unemployment.geo.json',
-				indicator = 'unemployment rate',
-				format = null;
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null,
+				classBreaksSlider,
+				legendWidth = 300;
 			
 			function init()
 			{
@@ -45,7 +47,7 @@
 					indicator 	: indicator,
 					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
 					colorScheme : 'GnBu',
-					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'strokeOpacity' : 0.25 },
+					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'fillColor' : '#cccccc' },
 					requestSuccess 		: function( request )
 					{
 						map.zoomToExtent( this.layer.getDataExtent(), true );
@@ -53,6 +55,24 @@
 						populateControls();
 						updateControls();
 						wireControls();
+					},
+					updateSuccess : function()
+					{
+						if ( !classBreaksSlider )
+						{ 
+							return;
+						}
+						
+						// update color scheme
+						updateColorSchemeRepresentation();
+						
+						var appliedBreaks = choroLayer.classification.getBoundsArray();
+						
+						if ( !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
+						{
+							updateClassBreaksSlider();
+						}
+						
 					}
 				});
 			};
@@ -89,24 +109,25 @@
 					}
 				});
 				
-				// create self-updating color scheme representation
-				// ol.thematic.Choropleth.createColorSchemeRepresentation( choroLayer, 'div#colorScheme' );		
+				createColorSchemeRepresentation();
 				
 				// class breaks
 				
-				var slider = new Ext.slider.Multi( {
+				classBreaksSlider = new Ext.slider.Multi( {
 					renderTo: 'classBreaks-slider',
 			        hideLabel: false,
 			        
-			        width: 300,
+			        width: legendWidth,
 			        
 			        minValue: choroLayer.distribution.minVal,
-			        maxValue: choroLayer.distribution.maxVal/*,
-			        values: choroLayer.classification.getBoundsArray()*/
+			        maxValue: choroLayer.distribution.maxVal,
+			        values: choroLayer.classification.getBoundsArray(),
+				    listeners: {
+						dragend: function( slider, e ) {
+							onManualClassBreaksSliderChange();
+						}
+					}
 				});
-				
-				slider.values = choroLayer.classification.getBoundsArray();
-				
 				
 				// color schemes
 				var $colorSelect = $('select#schemes');
@@ -117,6 +138,114 @@
 					
 					$colorSelect.append( option );
 				});
+				
+			};
+			
+			function onManualClassBreaksSliderChange()
+			{
+				if ( $('select#classMethods').val() != ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS )
+				{
+					$('select#classMethods').val( ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS );
+				}
+				
+				var options = {
+					method : ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS,
+					classBreaks : classBreaksSlider.getValues()
+				};
+				
+				choroLayer.updateOptions( options );
+				choroLayer.applyClassification();
+			};
+			
+			function createColorSchemeRepresentation()
+			{
+				var $cs = $( 'div#colorScheme' ),
+					bins = choroLayer.classification.bins,
+					colors = choroLayer.colorInterpolation,
+					repWidth = legendWidth,
+					dataWidth = choroLayer.distribution.range;
+				
+				var i = -1,
+					c, w;
+					
+				// add low chip
+				c = choroLayer.defaultSymbolizer.fillColor;
+				w = repWidth * ( ( bins[0].lowerBound - choroLayer.distribution.minVal ) / dataWidth );
+				
+				$cs.append( '<div class="colorChip" style="width: ' + Math.floor(w) + 'px; background-color: ' + c + '"></div>');
+				
+				// add all class chips
+				while ( ++i < bins.length )
+				{
+					c = colors[i];
+					w = repWidth * ( ( bins[i].upperBound - bins[i].lowerBound ) / dataWidth );
+								
+					$cs.append( '<div class="colorChip" id="classChip' + i + '" style="width: ' + Math.floor(w) + 'px; background-color: ' + c + '"></div>');
+				}
+				
+				// finally add high chip
+				c = choroLayer.defaultSymbolizer.fillColor;
+				w = repWidth * ( ( choroLayer.distribution.maxVal - bins[ bins.length - 1 ].upperBound ) / dataWidth );
+				
+				$cs.append( '<div class="colorChip" style="width: ' + Math.floor(w) + 'px; background-color: ' + c + '"></div>');
+			};
+			
+			function updateColorSchemeRepresentation()
+			{
+				var $cs = $( 'div#colorScheme' );
+				var $chipDivs = $cs.children( 'div.colorChip' );
+				var numChips = $chipDivs.length,
+					bins = choroLayer.classification.bins,
+					w, c;
+				
+				// see if we need to add div(s)
+				if ( (bins.length+2) > numChips )
+				{
+					while ( numChips < (bins.length+2) )
+					{
+						$cs.append( '<div class="colorChip"></div>');
+						numChips++;
+					}
+				}
+				
+				// see if we need to delete div(s)
+				else if ( (bins.length+2) < numChips )
+				{
+					while ( numChips > (bins.length+2) )
+					{
+						$($chipDivs[numChips-1]).remove();
+						
+						numChips--;
+					}
+				}
+				
+				
+				// set all colors and widths
+				$( 'div.colorChip' ).each( function(index)
+				{
+					if ( index == 0 || index == ( bins.length+1 ) )
+					{
+						if ( index == 0 )
+						{
+							w = legendWidth * ( ( bins[0].lowerBound - choroLayer.distribution.minVal ) / choroLayer.distribution.range );
+						}
+						else if ( index == ( bins.length+1 ) )
+						{
+							w = legendWidth * ( ( choroLayer.distribution.maxVal - bins[ bins.length - 1 ].upperBound ) / choroLayer.distribution.range );
+						}
+						
+						c = choroLayer.defaultSymbolizer.fillColor;
+					}
+					else
+					{
+						w = legendWidth * ( ( bins[ index-1 ].upperBound - bins[ index-1 ].lowerBound ) / choroLayer.distribution.range );
+						c = choroLayer.colorInterpolation[ index-1 ];
+					}
+					
+					$(this).css( { 'width' : w, 'background-color' : c } );
+				});
+				
+				
 				
 			};
 			
@@ -136,6 +265,57 @@
 				
 				var $classedInput = $('input#classed');
 				$classedInput.prop( "checked", choroLayer.classed );
+			};
+			
+			function updateClassBreaksSlider()
+			{
+				if ( classBreaksSlider == null )
+				{
+					return;
+				}
+				
+				var newBreaks = choroLayer.classification.getBoundsArray();
+				
+				// if the number of classes has changed, destroy and re-create component
+				if ( classBreaksSlider.values.length != newBreaks.length )
+				{
+					classBreaksSlider.destroy();
+					classBreaksSlider = new Ext.slider.Multi( {
+						renderTo: 'classBreaks-slider',
+				        hideLabel: false,
+				        
+				        width: legendWidth,
+				        
+				        minValue: choroLayer.distribution.minVal,
+				        maxValue: choroLayer.distribution.maxVal,
+				        values: newBreaks,
+				        listeners: {
+					        dragend: function( slider, e ) {
+								onManualClassBreaksSliderChange();
+							}
+					    }
+					});
+				}
+				// else loop through class breaks and set each value on the component
+				else
+				{
+					if ( classBreaksSlider.minValue != choroLayer.distribution.minVal )
+					{
+						classBreaksSlider.setMinValue( choroLayer.distribution.minVal );
+					}
+					
+					if ( classBreaksSlider.maxValue != choroLayer.distribution.maxVal )
+					{
+						classBreaksSlider.setMaxValue( choroLayer.distribution.maxVal );
+					}
+					
+					var i = -1;
+					while ( ++i < newBreaks.length )
+					{
+						classBreaksSlider.setValue( i, newBreaks[i] );
+					}
+				}
+				
 			};
 			
 			function wireControls()
@@ -182,7 +362,6 @@
 				choroLayer.updateOptions( options );
 				choroLayer.applyClassification();
 			};
-			
 			
 		</script>
 	</head>
