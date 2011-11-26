@@ -2,56 +2,25 @@
 	<head>
 		<title>OpenLayers-Symbology Dot Density example</title>
 		
-		
 		<!-- styles -->
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
-		
-		<style type="text/css">
-		
-			div#map {
-				width: 800px;
-				height: 800px;
-				
-				border: 2px solid #09c;
-				float: left;
-			}
-			
-			div#controls {
-				margin-left: 15px;
-				float: left;
-			}
-			
-			div.controlArea {
-				margin-left: 30px;
-				margin-bottom: 35px;
-			}
-			
-			div.control {
-				margin-left: 30px;
-				margin-bottom: 10px;
-			}
-			
-			div.control select {
-				margin-left: 30px;
-			}
-			
-		</style>
-		
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
-				
 		
 		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.dotdensity.js"></script>
 		
 		<script type="text/javascript">
-			var map, dotLayer,
+					
+			var map, thematicLayer,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
-				format = null;
+				format = new OpenLayers.Format.GeoJSON();
 			
 			function init()
 			{
@@ -62,35 +31,32 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	createDotLayer();
-            	
+            	createThematicLayer();
 			};
 			
-			function createDotLayer()
+			function createThematicLayer()
 			{
-				dotLayer = new ol.thematic.DotDensity( map, {
-					'url' : url,
-					'requestSuccess' : function( request )
+				thematicLayer = new ol.thematic.DotDensity( map, {
+					url 		: url,
+					indicator 	: indicator,
+					dotValue	: 150000,
+					defaultSymbolizer : { 'pointRadius' : 1, 'fillOpacity' : 1, 'fillColor' : '#000000', 'strokeWidth' : 0 },
+					
+					requestSuccess 		: function( request )
 					{
-						alert( 
-						'bout to update'
-						);
-						this.updateOptions( {
-							'indicator' : indicator
-						});
-						
-						this.applyClassification();
-						
-						map.zoomToExtent( this.layer.getDataExtent(), false );
+						map.zoomToExtent( this.layer.getDataExtent(), true );
 						
 						populateControls();
 						updateControls();
 						wireControls();
 					},
 					
-					defaultSymbolizer : { 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'pointRadius' : 1 }
+					updateSuccess : function()
+					{
+						// $( 'span#dotUnits' ).html( thematicLayer.indicator );
+						
+					}
 				});
-				
 			};
 			
 			
@@ -99,7 +65,7 @@
 				// attributes
 				// we'll just base this off the first feature
 				var $attributeSelect = $('select#attributes');
-				var feature = dotLayer.layer.features[0];
+				var feature = thematicLayer.layer.features[0];
 				
 				var attributes = feature.attributes,
 					option;
@@ -114,32 +80,75 @@
 					}
 				});
 				
+				var $shapeSelect = $('select#shapes');
+				
+				$.each( ol.thematic.ProportionalSymbol.Shapes, function( key, value )
+				{
+					if ( typeof( value ) == 'string' )
+					{
+						option = '<option value="' + value + '">' + value + '</option>';
+						$shapeSelect.append( option );
+					}
+				});
+				
 			};
 			
 			function updateControls()
 			{
 				var $attributeSelect = $('select#attributes');
-				$attributeSelect.val( dotLayer.indicator );
+				$attributeSelect.val( thematicLayer.indicator );
+				
+				$( 'input#dotValue' ).val( thematicLayer.dotValue );
+				$( 'span#dotUnits' ).html( thematicLayer.indicator );
+				
+				var $shapeSelect = $('select#shapes');
+				$shapeSelect.val( thematicLayer.defaultSymbolizer.graphicName || 'circle' );
+				
+				var $sizeSelect = $('select#sizes');
+				$sizeSelect.val( thematicLayer.defaultSymbolizer.pointRadius );
 			};
+			
+			
 			
 			function wireControls()
 			{
 				$( 'div.control select' ).change( function( event )
 				{
-					updateDotLayer();
+					updateThematicLayer();
+				});
+				
+				$( 'form#dotValue' ).submit( function( event )
+				{
+					var val = $( 'input#dotValue' ).val();
+					
+					
+					if ( !isNaN( val ) )
+					{
+						updateThematicLayer();
+					}
+					else
+					{
+						$( 'input#dotValue' ).val( thematicLayer.dotValue );
+					}
+					
+					
+					return false;
 				});
 			};
 			
-			function updateDotLayer()
+			function updateThematicLayer()
 			{
 				var options = {
-					indicator : $('select#attributes').val()
+					indicator : $('select#attributes').val(),
+					dotValue : $('input#dotValue').val()
 				};
 				
-				dotLayer.updateOptions( options );
-				dotLayer.applyClassification();
+				thematicLayer.defaultSymbolizer.graphicName = $('select#shapes').val();
+				thematicLayer.defaultSymbolizer.pointRadius = $('select#sizes').val();
+				
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
 			};
-			
 			
 		</script>
 	</head>
@@ -147,7 +156,7 @@
 
 
 	<body onload="init()">
-		<h1>OpenLayers-Symbology Dot Density example</h1>
+		<h1>OpenLayers-Symbology Dot Density jagexample</h1>
 		
 		<div id="map"></div>
 		
@@ -161,12 +170,37 @@
 					<h4>attribute</h4>
 					<select id="attributes"></select>
 				</div>
-
-				
-				
-
 			</div>
 			
+			<div class="controlArea">
+				<h3>dot appearance</h3>
+				<div class="control">
+					<h4>dot value</h4>
+					<form id="dotValue">
+						<span>1 dot = </span><input id="dotValue" type="text" /><span id="dotUnits"></span>
+					</form>
+				</div>
+								
+				<div class="control">
+					<h4>shapes</h4>
+					<select id="shapes"></select>
+				</div>
+				
+				<div class="control">
+					<h4>dot size</h4>
+					<select id="sizes">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="10">10</option>
+						<option value="15">15</option>
+						<option value="20">20</option>
+					</select>
+				</div>
+
+			</div>
 		</div>
 	</body>
 	

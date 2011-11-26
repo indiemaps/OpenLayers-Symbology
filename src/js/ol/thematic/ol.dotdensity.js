@@ -7,10 +7,6 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 	// TODO: default should be smarter
 	dotValue : null,
 	
-	minVal : null,
-	maxVal : null,
-	
-	
 	initialize : function( map, options )
 	{
 		ol.thematic.LayerBase.prototype.initialize.apply( this, arguments );
@@ -34,35 +30,6 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 		}
 		
 		this.layer.addFeatures( featuresToAdd );
-	},
-	
-	updateOptions : function( newOptions )
-	{
-		var oldOptions = OpenLayers.Util.extend({}, this.options);
-		this.addOptions(newOptions);
-		if (newOptions && newOptions.indicator != oldOptions.indicator) 
-		{
-			this.setClassification();
-		}
-		
-		if ( newOptions && newOptions.dotValue != oldOptions.dotValue )
-		{
-			// do we need to do anything here???
-		}
-	},
-	
-	setClassification : function()
-	{
-		var values = [];
-		var features = this.layer.features;
-		for (var i = 0; i < features.length; i++) 
-		{
-			values.push(features[i].attributes[this.indicator]);
-		}
-		
-		var dist = new ol.thematic.Distribution(values);
-		this.minVal = dist.minVal;
-		this.maxVal = dist.maxVal;
 	},
 	
 	// this will actually create/add or remove dots from each multipoint feature

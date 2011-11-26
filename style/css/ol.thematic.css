@@ -16,7 +16,7 @@ div.control {
 	margin-left: 30px;
 	margin-bottom: 10px;
 }
-div.control select, div.control div#colorScheme, div.control div#classBreaks-slider {
+div.control select, div.control div.colorScheme, div.control div#classBreaks-slider {
 	margin-left: 30px;
 }
 input#dotValue {
@@ -25,11 +25,19 @@ input#dotValue {
 	margin-left: 5px;
 }
 
-div#colorScheme {
+div.colorScheme {
 	height: 30px;
-	overflow:visible;
-	
 	margin-bottom: 12px;
+}
+
+div.colorScheme.unclassed {
+	border: solid 1px #000;
+	
+	background-image: linear-gradient(left , rgb(129,230,239) 37%, rgb(210,156,255) 69%, rgb(186,255,255) 85%);
+	background-image: -o-linear-gradient(left , rgb(129,230,239) 37%, rgb(210,156,255) 69%, rgb(186,255,255) 85%);
+	background-image: -moz-linear-gradient(left , rgb(129,230,239) 37%, rgb(210,156,255) 69%, rgb(186,255,255) 85%);
+	background-image: -webkit-linear-gradient(left , rgb(129,230,239) 37%, rgb(210,156,255) 69%, rgb(186,255,255) 85%);
+	background-image: -ms-linear-gradient(left , rgb(129,230,239) 37%, rgb(210,156,255) 69%, rgb(186,255,255) 85%);
 }
 
 div.colorChip {

@@ -22,8 +22,8 @@
 			Ext.require('Ext.slider.*');
 			
 			var map, choroLayer,
-				url = '../data/json/states.geo.json',
-				indicator = 'POP2010',
+				url = '../data/json/county_unemployment.geo.json',
+				indicator = 'unemployed',
 				format = null,
 				classBreaksSlider,
 				legendWidth = 300;
@@ -47,7 +47,7 @@
 					indicator 	: indicator,
 					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
 					colorScheme : 'GnBu',
-					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'fillColor' : '#cccccc' },
+					defaultSymbolizer 	: { 'strokeColor' : '#dddddd', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : 1, 'fillColor' : '#cccccc' },
 					requestSuccess 		: function( request )
 					{
 						map.zoomToExtent( this.layer.getDataExtent(), true );
@@ -116,7 +116,7 @@
 				classBreaksSlider = new Ext.slider.Multi( {
 					renderTo: 'classBreaks-slider',
 			        hideLabel: false,
-			        
+			        clickToChange: false,
 			        width: legendWidth,
 			        
 			        minValue: choroLayer.distribution.minVal,
@@ -159,7 +159,7 @@
 			
 			function createColorSchemeRepresentation()
 			{
-				var $cs = $( 'div#colorScheme' ),
+				var $cs = $( 'div.colorScheme.classed' ),
 					bins = choroLayer.classification.bins,
 					colors = choroLayer.colorInterpolation,
 					repWidth = legendWidth,
@@ -188,11 +188,47 @@
 				w = repWidth * ( ( choroLayer.distribution.maxVal - bins[ bins.length - 1 ].upperBound ) / dataWidth );
 				
 				$cs.append( '<div class="colorChip" style="width: ' + Math.floor(w) + 'px; background-color: ' + c + '"></div>');
+				
+				/* if unclassed, set the background-image styles */
+				
+				
+				
+				updateColorSchemeVisibility();
+			};
+			
+			function updateColorSchemeVisibility()
+			{
+				if ( choroLayer.classed )
+				{
+					$( 'div.colorScheme.classed' ).show();
+					$( 'div.colorScheme.unclassed' ).hide();
+				}
+				
+				else 
+				{
+					$( 'div.colorScheme.classed' ).hide();
+					$( 'div.colorScheme.unclassed' ).show();
+				}
 			};
 			
 			function updateColorSchemeRepresentation()
 			{
-				var $cs = $( 'div#colorScheme' );
+				updateColorSchemeVisibility();
+				
+				if ( choroLayer.classed )
+				{
+					updateClassedColorSchemeRepresentation();
+				}
+				
+				else 
+				{
+					updateUnclassedColorSchemeRepresentation();
+				}
+			};
+			
+			function updateClassedColorSchemeRepresentation()
+			{
+				var $cs = $( 'div.colorScheme.classed' );
 				var $chipDivs = $cs.children( 'div.colorChip' );
 				var numChips = $chipDivs.length,
 					bins = choroLayer.classification.bins,
@@ -243,10 +279,23 @@
 					}
 					
 					$(this).css( { 'width' : w, 'background-color' : c } );
-				});
+				});	
+			};
+			
+			function updateUnclassedColorSchemeRepresentation()
+			{
+				$cs = $( 'div.colorScheme.unclassed' );
+				var triColors = choroLayer.unclassedSchemeColors;
+					
+				var styles = OpenLayers.Rico.Color.create3ColorLinearGradientStyles( triColors[0], 0, triColors[1], 50, triColors[2], 100 );
+									
 				
+				// background-image
 				
-				
+				for ( var i=0; i < styles.length; i++ )
+				{
+					$cs.css( 'background-image', styles[i] );
+				}
 			};
 			
 			function updateControls()
@@ -283,7 +332,7 @@
 					classBreaksSlider = new Ext.slider.Multi( {
 						renderTo: 'classBreaks-slider',
 				        hideLabel: false,
-				        
+				        clickToChange: false,
 				        width: legendWidth,
 				        
 				        minValue: choroLayer.distribution.minVal,
@@ -346,12 +395,29 @@
 				$( 'div#numClasses select' ).prop( 'disabled', !classed );
 				$( 'div#classMethods select' ).prop( 'disabled', !classed );
 				
+				classBreaksSlider.setDisabled( !classed );
+				
 				choroLayer.updateOptions( options );
 				choroLayer.applyClassification();
 			};
 			
 			function updateChoroLayer()
 			{
+				// if the variable has changed and the current class. method is bounds, switch to equal interval
+				if ( choroLayer.method == ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS )
+				{
+					if 
+					(
+						( $('select#attributes').val() != choroLayer.indicator )
+						||
+						( $('select#numClasses').val() != choroLayer.numClasses )
+					)
+					{
+						$('select#classMethods').val( ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS );
+					}
+				}
+				
+				
 				var options = {
 					indicator : $('select#attributes').val(),
 					numClasses : $('select#numClasses').val(),
@@ -413,7 +479,8 @@
 				<div class="control" id="legend">
 					<h4>the legend is the key</h4>
 					
-					<div id="colorScheme"></div>
+					<div class="colorScheme unclassed"></div>
+					<div class="colorScheme classed"></div>
 					<div id="classBreaks-slider"></div>
 				</div>
 
@@ -424,7 +491,7 @@
 				<h3>colors</h3>
 				
 				<div class="control">
-					<h4>color scheme</h4>
+					<h4><a href="http://colorbrewer.org">ColorBrewer</a> color scheme</h4>
 					<select id="schemes"></select>
 				</div>
 				

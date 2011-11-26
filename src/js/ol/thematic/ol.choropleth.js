@@ -5,9 +5,10 @@
 ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase, 
 {	
 	/* choropleth specifics */
-	colors				: null, 					// a user-settable array of color values to be used for classes (or unclassed)
-	colorScheme 		: 'YlGn', 					// a ColorBrewer color scheme abbreviation
-	colorInterpolation 	: null,
+	colors					: null, 					// a user-settable array of color values to be used for classes (or unclassed)
+	unclassedSchemeColors 	: null,						// not user-settable
+	colorScheme 			: 'YlGn', 					// a ColorBrewer color scheme abbreviation
+	colorInterpolation 		: null,
 	
 	
 	/* ol.thematic.LayerBase properties */
@@ -120,13 +121,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		}
 		// unclassed
 		else
-		{
-			var triColors;
-			
+		{			
 			if ( this.colors == null || this.colors.length < 2 )
 			{
 				var classNumToUse = 7;
-				triColors = 
+				this.unclassedSchemeColors = 
 				[ 
 					OpenLayers.Rico.Color.createFromRGB( colorbrewer[ this.colorScheme ][ classNumToUse ][ 0 ] ), 
 					OpenLayers.Rico.Color.createFromRGB( colorbrewer[ this.colorScheme ][ classNumToUse ][ Math.round((classNumToUse-1)/2) ] ), 
@@ -138,7 +137,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 				// we don't know what format the user's colors are in
 				var createFunction = this.colors[0].substr(0,3) == 'rgb' ? OpenLayers.Rico.Color.createFromRGB : OpenLayers.Rico.Color.createFromHex;
 				
-				triColors = 
+				this.unclassedSchemeColors = 
 				[
 					createFunction( this.colors[0] ),
 					createFunction( this.colors[ Math.round( ( this.colors.length - 1 ) / 2 ) ] ),
@@ -151,15 +150,16 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			};
 					
 			var dist = this.distribution,
-				ind = this.indicator;
+				ind = this.indicator
+				cols = this.unclassedSchemeColors;
 			
 			context = {
 				getColor : function( feature )
 				{
 					var val = feature.attributes[ ind ],
 						inFirstHalf = ( val < ( .5 * dist.range + dist.minVal ) ),
-						c1 = inFirstHalf ? triColors[0] : triColors[1],
-						c2 = inFirstHalf ? triColors[1] : triColors[2],
+						c1 = inFirstHalf ? cols[0] : cols[1],
+						c2 = inFirstHalf ? cols[1] : cols[2],
 						amt = ( val - ( inFirstHalf ? dist.minVal : ( .5 * dist.range + dist.minVal ) ) ) / ( .5 * dist.range );
 					
 					var color = OpenLayers.Rico.Color.lerpColor( c1, c2, amt ).asRGB();
@@ -206,3 +206,22 @@ OpenLayers.Rico.Color.lerpColor = function( c1, c2, amt )
 	
 	return new OpenLayers.Rico.Color( r3, g3, b3 );
 };
+
+
+OpenLayers.Rico.Color.create3ColorLinearGradientStyles = function( c1, p1, c2, p2, c3, p3 )
+{
+	var props = [ 'linear-gradient', '-o-linear-gradient', '-moz-linear-gradient', '-webkit-linear-gradient', '-ms-linear-gradient' ];
+	var gradStyles = [],
+		style;
+	
+	for ( var i = 0; i < props.length; i++ )
+	{
+		style = props[i] + '(left, ' + c1.asRGB() + ' ' + p1 + '%, ' + c2.asRGB() + ' ' + p2 + '%, ' + c3.asRGB() + ' ' + p3 + '%)';
+		
+		gradStyles.push( style );
+	}
+	
+	return gradStyles;
+};
+
+
