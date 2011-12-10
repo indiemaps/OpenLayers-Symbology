@@ -14,6 +14,7 @@
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
 		
 		<script type="text/javascript">
@@ -36,7 +37,33 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	createThematicLayer();
+            	// now let's add the main geography as a standard vector layer
+            	var strokeFeatures = new OpenLayers.Layer.Vector("unscaled features", {
+				    strategies: [ new OpenLayers.Strategy.Fixed() ],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: format
+				    }),
+				    
+				    style : { 'strokeColor' : '#333', 'strokeWidth' : 3 }
+				});
+				map.addLayer( strokeFeatures );
+            	
+            	
+            	var fillFeatures = new OpenLayers.Layer.Vector("unscaled features", {
+				    strategies: [ new OpenLayers.Strategy.Fixed() ],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: format
+				    }),
+				    
+				    style : { 'fillColor' : '#fff', 'fillOpacity' : 1, 'strokeColor' : '#fff' }
+				});
+				map.addLayer( fillFeatures );
+            	
+            	
+            	// and only when that's loaded will we create the cartogram layer
+            	// createThematicLayer();
 			};
 			
 			function createThematicLayer()
@@ -47,12 +74,14 @@
 					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
 					requestSuccess 		: function( request )
 					{
-						map.zoomToExtent( this.layer.getDataExtent(), true );
+						// map.zoomToExtent( this.layer.getDataExtent(), true );
 						
+						/*
 						populateControls();
 						updateControls();
 						updateClassed();
 						wireControls();
+						*/
 					},
 					updateSuccess : function()
 					{
