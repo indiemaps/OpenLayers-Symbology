@@ -10,8 +10,12 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	sizes	: null, /* could be a user-settable array of symbol areas for each data class */
 	sizeInterpolation : null,
 	
-	/* this only applies when UNCLASSED */
 	scaling : 'mathematical', 
+	
+	perceptualOptions : {
+		powerFunctionExponent : .8747,
+		powerFunctionConstant : .98365
+	},
 	
 	classed : false,
 	
@@ -75,8 +79,6 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	
 	createSizeInterpolation : function()
 	{
-		// TODO
-		
 		var numSizes = this.classification.bins.length;
 		
 		if ( this.sizes == null || this.sizes.length < numSizes )
@@ -84,9 +86,30 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 			this.sizeInterpolation = [];
 			
 			// for each class, pick a size evenly between the min and max size
+			var size,
+				sizeMax = this.maxSize,
+				sizeMin = this.minSize;
+			
+			if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+			{
+				var c = this.perceptualOptions.powerFunctionConstant,
+					n = this.perceptualOptions.powerFunctionExponent,
+					c1 = Math.pow( 1/c, ( 1/n ) );
+					
+				sizeMax = c * Math.pow( sizeMax, n );
+				sizeMin = c * Math.pow( sizeMin, n );
+			}	
+			
 			for ( var i = 0; i < numSizes; i++ )
 			{
-				this.sizeInterpolation.push( ( this.maxSize - this.minSize ) * (i/(numSizes-1)) + this.minSize );
+				size = ( sizeMax - sizeMin ) * (i/(numSizes-1)) + sizeMin;
+				
+				if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+				{
+					size = c1 * Math.pow( size, ( 1 / n ) );
+				}
+				
+				this.sizeInterpolation.push( size );
 			}
 		}
 		else
@@ -222,5 +245,6 @@ ol.thematic.ProportionalSymbol.Shapes = {
 
 ol.thematic.ProportionalSymbol.Scaling = {
 	MATHEMATICAL : 'mathematical',
-	PERCEPTUAL : 'perceptual'
+	PERCEPTUAL : 'perceptual',
+	DEFAULT_SCALING_EXPONENT : .57
 };

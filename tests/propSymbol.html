@@ -44,6 +44,13 @@
 				propLayer = new ol.thematic.ProportionalSymbol( map, {
 					url 		: url,
 					indicator 	: indicator,
+					
+					/* TODO get the multi-slider to reflect class breaks on instantiation */
+					classed : true,
+					
+					/* TODO check on this */
+					scaling : 'mathematical',
+					
 					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc',
 											'graphicName' : 'circle' },
 					requestSuccess 		: function( request )
