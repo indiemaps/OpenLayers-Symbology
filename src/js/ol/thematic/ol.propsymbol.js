@@ -67,9 +67,10 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 			if 
 			(	newOptions.method 		!= oldOptions.method ||
 	            newOptions.indicator 	!= oldOptions.indicator ||
+	            newOptions.scaling		!= oldOptions.scaling ||
 	            newOptions.numClasses 	!= oldOptions.numClasses ||
 	            newOptions.classBreaks 	!= null ||
-	            ( newOptions.classed == true && this.sizeInterpolation == null )
+	            ( newOptions.classed == true && oldOptions.classed == false )
 	        )
 	        {
 	        	this.updateClassification();
@@ -77,10 +78,17 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		}
 	},
 	
+	/**
+	 * only applies if classed
+	 * 
+	 * sets the 'sizeInterpolation' property
+	 * if 'sizes' is preset and has enough sizes, sizeInterpolation will be set to match sizes
+	 * else will interpolate new sizes between the min and max sizes
+	 * 
+	 */
 	createSizeInterpolation : function()
 	{
 		var numSizes = this.classification.bins.length;
-		
 		if ( this.sizes == null || this.sizes.length < numSizes )
 		{
 			this.sizeInterpolation = [];
@@ -111,6 +119,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 				
 				this.sizeInterpolation.push( size );
 			}
+			
 		}
 		else
 		{
@@ -203,11 +212,32 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 				shape = this.defaultSymbolizer.graphicName;
 			}
 			
+			var size,
+				sizeMax = this.maxSize,
+				sizeMin = this.minSize;
+			
+			if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+			{
+				var c = this.perceptualOptions.powerFunctionConstant,
+					n = this.perceptualOptions.powerFunctionExponent,
+					c1 = Math.pow( 1/c, ( 1/n ) );
+					
+				sizeMax = c * Math.pow( sizeMax, n );
+				sizeMin = c * Math.pow( sizeMin, n );
+			}
+			
 			context = {
 				getSize : function( feature )
 				{
 					var val = feature.attributes[ that.indicator ];
-					var area = (val - that.distribution.minVal) / (that.distribution.maxVal - that.distribution.minVal) * (that.maxSize - that.minSize) + that.minSize;
+					size = (val - that.distribution.minVal) / (that.distribution.maxVal - that.distribution.minVal) * (sizeMax - sizeMin) + sizeMin;
+					
+					if ( that.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+					{
+						// TODO
+						
+						size = c1 * Math.pow( size, ( 1 / n ) );
+					}
 					
 					// the returned pointRadius depends on the shape
 					var pr;
@@ -215,19 +245,20 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 					switch( shape )
 					{
 						case 'square':
-							pr = Math.sqrt( area ) / 2;
+							pr = Math.sqrt( size ) / 2;
 							break;
 						case 'triangle':
-							pr = Math.sqrt( ( 4 / Math.sqrt(3) ) * area ) / 2;
+							pr = Math.sqrt( ( 4 / Math.sqrt(3) ) * size ) / 2;
 							break;
 						default: /* circle or anything else */
-							pr = Math.sqrt( area / Math.PI );
+							pr = Math.sqrt( size / Math.PI );
 					}
 					
 					return pr;
 				}
 			};
 		}
+		
 		
 		this.extendStyle(rules, symbolizer, context);
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);

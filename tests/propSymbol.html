@@ -7,7 +7,7 @@
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
-		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 		<script type="text/javascript" src="ext-js/bootstrap.js"></script>
 		
@@ -175,6 +175,14 @@
 				
 				var $shapeSelect = $('select#shapes');
 				$shapeSelect.val( propLayer.defaultSymbolizer.graphicName || 'circle' );
+							
+				var $scalingSelect = $('select#scaling');
+				$scalingSelect.val( propLayer.scaling );
+				
+				if ( propLayer.classed )
+				{
+					updateClassBreaksSlider();
+				}
 			};
 			
 			function updateClassBreaksSlider()
@@ -270,12 +278,12 @@
 					}
 				}
 				
-				
 				var options = {
 					indicator : $('select#attributes').val(),
 					numClasses : $('select#numClasses').val(),
 					method : $('select#classMethods').val(),
-					classed : $( 'input#classed' ).prop( "checked" )
+					classed : $( 'input#classed' ).prop( "checked" ),
+					scaling : $( 'select#scaling' ).val()
 				};
 				
 				propLayer.defaultSymbolizer.graphicName = $('select#shapes').val();
@@ -339,9 +347,18 @@
 			</div>
 			
 			<div class="controlArea">
-				<h3>shapes</h3>
+				<h3>scaling / shapes</h3>
 				
 				<div class="control">
+					<h4>scaling method</h4>
+					<select id="scaling">
+						<option value="mathematical">mathematical</option>
+						<option value="perceptual">perceptual</option>
+					</select>
+				</div>
+				
+				<div class="control">
+					<h4>shape</h4>
 					<select id="shapes"></select>
 				</div>
 				
