@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Dot Density Layer Preloaded example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.dotdensity.js"></script>
+		
+		<script type="text/javascript">
+					
+			var map, layer, dotLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createPolyLayer();
+			};
+			
+			function createPolyLayer()
+			{
+				layer = new OpenLayers.Layer.Vector( 'features', 
+				{
+					strategies: [new OpenLayers.Strategy.Fixed()],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: new OpenLayers.Format.GeoJSON()
+				    }),
+				    
+				    
+				});
+				map.addLayer( layer );
+				
+				layer.events.register( 'featuresadded', null, createDotLayer );
+			};
+			
+			function createDotLayer()
+			{
+				layer.events.unregister( 'featuresadded', null, createDotLayer );
+				dotLayer = new ol.thematic.DotDensity( map, {
+					layer 		: layer,
+					indicator 	: indicator,
+					dotValue	: 150000,
+					defaultSymbolizer : { 'pointRadius' : 1, 'fillOpacity' : 1, 'fillColor' : '#000000', 'strokeWidth' : 0 },
+				});
+				
+				map.zoomToExtent( layer.getDataExtent() );
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Dot Density Layer pre-loaded example</h1>
+		
+		<div id="map"></div>
+		
+	</body>
+	
+</html>

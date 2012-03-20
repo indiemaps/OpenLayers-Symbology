@@ -54,7 +54,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	
 	requestSuccess: function(request) {},
 	updateSuccess : function() {},
-	valuator : null,
+	valuator : null, /* a function (used instead of the indicator property) that returns the attribute value for each feature */
 	defaultSymbolizer : {},
 	
 	// distribution/classification-related
@@ -63,6 +63,8 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	
 	// options
 	indicator 	: null,
+	standardization : null, /* an optional attribute to standardize the main indicator attribute */
+	
 	classed 	: false,
 	method 		: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
 	numClasses 	: 5,
@@ -72,8 +74,14 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	{
 		this.map = map;
 		this.addOptions( options );
+				
+		if ( this.layer && this.layer.features.length > 0 )
+		{
+			this.sourceLayer = this.layer;
+			this.features = this.layer.features.concat();
+		}
 		
-		if ( !this.layer )
+		if ( !this.layer || this.layer.features.length == 0 || this.IS_OVERLAY_SYMBOLOGY )
 		{
 			var styleMap = new OpenLayers.StyleMap({
 				'default' : new OpenLayers.Style(
@@ -83,6 +91,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 					)
 				)
 			});
+			
 			var layer = new OpenLayers.Layer.Vector( 'thematic', 
 			{
 				projection : new OpenLayers.Projection("EPSG:4326"),
@@ -93,13 +102,25 @@ ol.thematic.LayerBase = OpenLayers.Class(
 			map.addLayer( layer );
 			this.layer = layer;
 		}
-		
+			
+
 		if ( this.url )
 		{
 			OpenLayers.loadURL(
 				this.url, '', this, this.onSuccess
 			)
 		}
+		else if ( this.IS_OVERLAY_SYMBOLOGY )
+		{
+			// this method should be overridden in all subclasses that are overlays
+			this.addFeatures( this.features );
+			this.processFeatures();
+		}
+		else
+		{
+			this.processFeatures();
+		}
+		
 	},
 	
 	onSuccess : function( request )
@@ -115,28 +136,39 @@ ol.thematic.LayerBase = OpenLayers.Class(
 		format.internalProjection = this.map.getProjectionObject();
 		
 		this.features = format.read( doc );
+		this.addFeatures( this.features );
 		
+		this.processFeatures();
+		
+		this.requestSuccess(request);
+	},
+	
+	processFeatures : function()
+	{
+		this.convertAttributes();
+		this.updateDistribution();
+		this.updateClassification();
+		this.applyClassification();
+	},
+	
+	convertAttributes : function()
+	{
 		var feature, attribute;
 		for ( var i = 0; i < this.features.length; i++ )
 		{
 			feature = this.features[i];
 			
-			$.each( feature.attributes, function( key, value )
+			for ( var att in feature.attributes )
 			{
-				if ( value && value.value )
+				if ( feature.attributes.hasOwnProperty( att ) )
 				{
-					feature.attributes[ key ] = value.value;
+					if ( feature.attributes[ att ] && feature.attributes[ att ].value )
+					{
+						feature.attributes[ att ] = feature.attributes[ att ].value;
+					}
 				}
-			});
+			}
 		}
-		
-		this.addFeatures( this.features );
-		
-		this.updateDistribution();
-		this.updateClassification();
-		this.applyClassification();
-		
-		this.requestSuccess(request);
 	},
 	
 	addFeatures : function( features )
@@ -190,10 +222,12 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	updateDistribution : function()
 	{
 		var values = [];
-		var features = this.layer.features;
+		var features = this.features;
 		for (var i = 0; i < features.length; i++) 
 		{
-			values.push(features[i].attributes[this.indicator]);
+			// values.push(features[i].attributes[this.indicator]);
+			
+			values.push( this.valuator != null ? this.valuator( features[i] ) : features[i].attributes[this.indicator] );
 		}
 		this.distribution = new ol.thematic.Distribution(values);
 	},
@@ -220,6 +254,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 	},
 	
 	
-	CLASS_NAME: "ol.thematic.LayerBase"
+	CLASS_NAME: "ol.thematic.LayerBase",
+	IS_OVERLAY_SYMBOLOGY : true
 	
 });

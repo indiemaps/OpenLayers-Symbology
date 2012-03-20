@@ -7,8 +7,8 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	/* proportional symbol-specific */
 	minSize : 5,
 	maxSize : 2000, /* in pixel area */
-	sizes	: null, /* could be a user-settable array of symbol areas for each data class */
-	sizeInterpolation : null,
+	sizes	: [105, 205, 305, 405, 1900], /* could be a user-settable array of symbol areas for each data class */
+	sizeInterpolation : null, 
 	
 	scaling : 'mathematical', 
 	
@@ -89,7 +89,14 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	createSizeInterpolation : function()
 	{
 		var numSizes = this.classification.bins.length;
-		if ( this.sizes == null || this.sizes.length < numSizes )
+		
+		// use the user-set sizes
+		if ( this.scaling == 'manual' && this.sizes.length >= numSizes )
+		{
+			this.sizeInterpolation = this.sizes.concat();
+		}
+		// calculate sizes
+		else
 		{
 			this.sizeInterpolation = [];
 			
@@ -120,10 +127,6 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 				this.sizeInterpolation.push( size );
 			}
 			
-		}
-		else
-		{
-			this.sizeInterpolation = this.sizes.concat();
 		}
 	},
 	
@@ -264,7 +267,8 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	
-	CLASS_NAME: "ol.thematic.ProportionalSymbol"
+	CLASS_NAME: "ol.thematic.ProportionalSymbol",
+	IS_OVERLAY_SYMBOLOGY : true
 	
 });
 
@@ -277,5 +281,5 @@ ol.thematic.ProportionalSymbol.Shapes = {
 ol.thematic.ProportionalSymbol.Scaling = {
 	MATHEMATICAL : 'mathematical',
 	PERCEPTUAL : 'perceptual',
-	DEFAULT_SCALING_EXPONENT : .57
+	MANUAL : 'manual'
 };

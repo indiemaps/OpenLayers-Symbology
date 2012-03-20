@@ -1,0 +1,134 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Proportional Symbol example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="ext-js/resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery, delaunay ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="ext-js/bootstrap.js"></script>
+		
+		<script type="text/javascript" src="../lib/delaunay.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.isoline.js"></script>
+		
+		<script type="text/javascript">
+		
+			Ext.require('Ext.slider.*');
+			
+			var map, thematicLayer,
+				url = '../data/json/city.climate.json',
+				indicator = 'snowaveinchann',
+				legendWidth = 300;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createThematicLayer();
+			};
+			
+			function createThematicLayer()
+			{
+				thematicLayer = new ol.thematic.Isoline( map, {
+					url 		: url,
+					indicator 	: indicator,
+					interval : 5,
+					defaultSymbolizer : { 'pointRadius' : 3, 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'strokeWidth' : 1, 'strokeColor' : '#0099cc' },
+					
+					requestSuccess 		: function( request )
+					{
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						populateControls();
+						updateControls();
+						wireControls();
+					},
+					
+					updateSuccess : function()
+					{
+						
+					}
+				});
+			};
+			
+			function populateControls()
+			{
+				// attributes
+				// we'll just base this off the first feature
+				var $attributeSelect = $('select#attributes');
+				var feature = thematicLayer.features[0];
+				
+				var attributes = feature.attributes,
+					option;
+								
+				$.each( attributes, function( key, value )
+				{
+					// see if value is a number
+					if ( !isNaN( value ) )
+					{
+						option = '<option value="' + key + '">' + key + '</option>';
+						$attributeSelect.append( option );
+					}
+				});
+			};
+			
+			function updateControls()
+			{
+				var $attributeSelect = $('select#attributes');
+				$attributeSelect.val( thematicLayer.indicator );
+			};
+			
+			function wireControls()
+			{
+				$( 'div.control select' ).change( function( event )
+				{
+					updateThematicLayer();
+				});
+			};
+			
+			function updateThematicLayer()
+			{
+				var options = {
+					indicator : $('select#attributes').val()
+				};
+				
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
+			};
+		
+		</script>
+		
+	</head>
+	
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Isoline example</h1>
+		
+		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>data</h3>
+				
+				<div class="control">
+					<h4>attribute</h4>
+					<select id="attributes"></select>
+				</div>
+			</div>
+		</div>
+		
+	</body>
+</html>

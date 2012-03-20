@@ -25,6 +25,7 @@
 				indicator = 'POP2010',
 				format = new OpenLayers.Format.GeoJSON(), /* this is optional as GeoJSON is the default */
 				classBreaksSlider,
+				classSizeSlider,
 				legendWidth = 300;
 			
 			function init()
@@ -76,6 +77,12 @@
 							updateClassBreaksSlider();
 						}
 						
+						var appliedSizes = propLayer.sizeInterpolation;
+						
+						if ( !Array.equalsInOrder( appliedSizes, classSizeSlider.getValues() ) )
+						{
+							updateClassSizeSlider();
+						}
 					}
 				});
 			};
@@ -112,23 +119,6 @@
 					}
 				});
 				
-				// class breaks
-				
-				classBreaksSlider = new Ext.slider.Multi( {
-					renderTo: 'classBreaks-slider',
-			        hideLabel: false,
-			        clickToChange: false,
-			        width: legendWidth,
-			        
-			        minValue: propLayer.distribution.minVal,
-			        maxValue: propLayer.distribution.maxVal,
-				    listeners: {
-						dragend: function( slider, e ) {
-							onManualClassBreaksSliderChange();
-						}
-					}
-				});
-				
 				var $shapeSelect = $('select#shapes');
 				
 				$.each( ol.thematic.ProportionalSymbol.Shapes, function( key, value )
@@ -137,6 +127,17 @@
 					{
 						option = '<option value="' + value + '">' + value + '</option>';
 						$shapeSelect.append( option );
+					}
+				});
+				
+				var $scalingSelect = $('select#scaling');
+				
+				$.each( ol.thematic.ProportionalSymbol.Scaling, function( key, value )
+				{
+					if ( typeof( value ) == 'string' )
+					{
+						option = '<option value="' + value + '">' + value + '</option>';
+						$scalingSelect.append( option );
 					}
 				});
 				
@@ -152,6 +153,22 @@
 				var options = {
 					method : ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS,
 					classBreaks : classBreaksSlider.getValues()
+				};
+				
+				propLayer.updateOptions( options );
+				propLayer.applyClassification();
+			};
+			
+			function onManualClassSizeSliderChange()
+			{
+				if ( $( 'select#scaling' ).val() != ol.thematic.ProportionalSymbol.Scaling.MANUAL )
+				{
+					$( 'select#scaling' ).val( ol.thematic.ProportionalSymbol.Scaling.MANUAL );
+				}
+				
+				var options = {
+					scaling : ol.thematic.ProportionalSymbol.Scaling.MANUAL,
+					sizes : classSizeSlider.getValues()
 				};
 				
 				propLayer.updateOptions( options );
@@ -182,22 +199,22 @@
 				if ( propLayer.classed )
 				{
 					updateClassBreaksSlider();
+					updateClassSizeSlider();
 				}
 			};
 			
 			function updateClassBreaksSlider()
 			{
-				if ( classBreaksSlider == null )
-				{
-					return;
-				}
-				
 				var newBreaks = propLayer.classification.getBoundsArray();
 				
 				// if the number of classes has changed, destroy and re-create component
-				if ( !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
+				if ( !classBreaksSlider || !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
 				{
-					classBreaksSlider.destroy();
+					if ( classBreaksSlider != null )
+					{
+						classBreaksSlider.destroy();
+					}
+					
 					classBreaksSlider = new Ext.slider.Multi( {
 						renderTo: 'classBreaks-slider',
 				        hideLabel: false,
@@ -233,7 +250,53 @@
 						classBreaksSlider.setValue( i, newBreaks[i] );
 					}
 				}
+			};
+			
+			function updateClassSizeSlider()
+			{
+				var newSizes = propLayer.sizeInterpolation;
 				
+				if ( !classSizeSlider || !classSizeSlider.values || classSizeSlider.values.length != newSizes.length )
+				{
+					if ( classSizeSlider != null )
+					{
+						classSizeSlider.destroy();
+					}
+					
+					classSizeSlider = new Ext.slider.Multi( {
+						renderTo: 'sizing-slider',
+						hideLabel: false,
+						clickToChange: false,
+						width: legendWidth,
+						
+						minValue: propLayer.minSize,
+						maxValue: propLayer.maxSize,
+						values: newSizes,
+						listeners: {
+							dragend: function( slider, e ) {
+								onManualClassSizeSliderChange();
+							}
+						}
+					});
+				}
+				else
+				{
+					if ( classSizeSlider.minValue > propLayer.minSize )
+					{
+						classSizeSlider.setMinValue( propLayer.minSize );
+					}
+					
+					if ( classSizeSlider.maxValue < propLayer.maxSize )
+					{
+						classSizeSlider.setMaxValue( propLayer.maxSize );
+					}
+					
+					var i = -1;
+					while ( ++i < newSizes.length )
+					{
+						classSizeSlider.setValue( i, newSizes[i] );
+					}
+				}
 			};
 			
 			function wireControls()
@@ -260,6 +323,12 @@
 				$( 'div#classMethods select' ).prop( 'disabled', !classed );
 				
 				classBreaksSlider.setDisabled( !classed );
+				classSizeSlider.setDisabled( !classed );
+				
+				if ( !classed && (propLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL) )
+				{
+					$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
+				}
 			};
 			
 			function updatePropLayer()
@@ -269,12 +338,20 @@
 				{
 					if 
 					(
-						( $('select#attributes').val() != propLayer.indicator )
-						||
 						( $('select#numClasses').val() != propLayer.numClasses )
+						||
+						( $('select#attributes').val() != propLayer.indicator )
 					)
 					{
 						$('select#classMethods').val( ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS );
+					}
+				}
+				
+				if ( propLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL )
+				{
+					if ( $('select#numClasses').val() != propLayer.numClasses )
+					{
+						$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
 					}
 				}
 				
@@ -341,7 +418,7 @@
 				
 				<div class="control" id="legend">
 					<h4>the legend is the key</h4>
-					<div id="classBreaks-slider"></div>
+					<div class="slider" id="classBreaks-slider"></div>
 				</div>
 
 			</div>
@@ -351,10 +428,9 @@
 				
 				<div class="control">
 					<h4>scaling method</h4>
-					<select id="scaling">
-						<option value="mathematical">mathematical</option>
-						<option value="perceptual">perceptual</option>
-					</select>
+					<select id="scaling"></select>
+					
+					<div class="slider" id="sizing-slider"></div>
 				</div>
 				
 				<div class="control">

@@ -14,7 +14,7 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 	
 	addFeatures : function( features )
 	{
-		var featuresToAdd = [];
+		this.dotFeatures = [];
 		
 		var feature, geometry, attributes;
 		for ( var i = 0; i < features.length; i++ )
@@ -23,13 +23,12 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 				attributes = feature.attributes,
 				attributes.polygonGeometry = feature.geometry,
 				geometry = new OpenLayers.Geometry.MultiPoint();
-			
 			feature = new OpenLayers.Feature.Vector( geometry, attributes );
 			
-			featuresToAdd.push( feature );
+			this.dotFeatures.push( feature );
 		}
-		
-		this.layer.addFeatures( featuresToAdd );
+				
+		this.layer.addFeatures( this.dotFeatures );
 	},
 	
 	// this will actually create/add or remove dots from each multipoint feature
@@ -42,7 +41,7 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 			this.dotValue = Math.round( this.maxVal / 250 );
 		}
 		
-		var features = this.layer.features, 
+		var features = this.dotFeatures, 
 			feature, dotGeometry,
 			value, numDots_has, numDots_needs, 
 			polyGeometry, polyBounds,
@@ -60,7 +59,6 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 				polyBounds = polyGeometry.getBounds(),
 				point = null;
 				
-				
 			while ( numDots_needs != numDots_has )
 			{
 				if ( numDots_needs > numDots_has )
@@ -68,7 +66,6 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 					
 					point = new OpenLayers.Geometry.Point( polyBounds.left + Math.random() * polyBounds.getWidth(), polyBounds.bottom + Math.random() * polyBounds.getHeight() ),
 						containsPt = false;
-					
 					// multipolygon?
 					if ( polyGeometry.components != null )
 					{
@@ -110,5 +107,6 @@ ol.thematic.DotDensity = OpenLayers.Class( ol.thematic.LayerBase,
 	},
 	
 	
-	CLASS_NAME: "ol.thematic.DotDensity"
+	CLASS_NAME: "ol.thematic.DotDensity",
+	IS_OVERLAY_SYMBOLOGY : true
 });

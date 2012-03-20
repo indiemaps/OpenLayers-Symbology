@@ -9,7 +9,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	unclassedSchemeColors 	: null,						// not user-settable
 	colorScheme 			: 'YlGn', 					// a ColorBrewer color scheme abbreviation
 	colorInterpolation 		: null,
-	
+	colorStrokes			: false,
 	
 	/* ol.thematic.LayerBase properties */
 	defaultSymbolizer 	: { 'fillOpacity' : 1 },
@@ -116,6 +116,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 					})
 				});
 				
+				if ( this.colorStrokes )
+				{
+					rule.symbolizer.strokeColor = this.colorInterpolation[i];
+				}
+				
 				rules.push( rule );
 			}
 		}
@@ -148,6 +153,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			symbolizer = {
 				fillColor : "${getColor}"
 			};
+			
+			if ( this.colorStrokes )
+			{
+				symbolizer.fillColor = "${getColor}";
+			}
 					
 			var dist = this.distribution,
 				ind = this.indicator
@@ -172,7 +182,8 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	
-	CLASS_NAME: "ol.thematic.Choropleth"
+	CLASS_NAME: "ol.thematic.Choropleth",
+	IS_OVERLAY_SYMBOLOGY : false
 });
 
 

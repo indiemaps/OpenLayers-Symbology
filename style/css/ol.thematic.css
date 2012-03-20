@@ -16,9 +16,14 @@ div.control {
 	margin-left: 30px;
 	margin-bottom: 10px;
 }
-div.control select, div.control div.colorScheme, div.control div#classBreaks-slider {
+div.control select, div.control div.colorScheme, div.control div.slider {
 	margin-left: 30px;
 }
+
+div.slider {
+	margin-top: 10px;
+}
+
 input#dotValue {
 	width: 100px;
 	margin-right: 5px;

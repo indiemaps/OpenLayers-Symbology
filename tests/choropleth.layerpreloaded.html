@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Choropleth example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
+		
+		<script type="text/javascript">
+					
+			var map, layer, choroLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				format = null;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createPolyLayer();
+			};
+			
+			function createPolyLayer()
+			{
+				layer = new OpenLayers.Layer.Vector( 'features', 
+				{
+					strategies: [new OpenLayers.Strategy.Fixed()],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: new OpenLayers.Format.GeoJSON()
+				    }),
+				    
+				    
+				});
+				map.addLayer( layer );
+				
+				layer.events.register( 'featuresadded', null, createChoroLayer );
+			};
+			
+			function createChoroLayer()
+			{
+				choroLayer = new ol.thematic.Choropleth( map, {
+					layer 		: layer,
+					indicator 	: indicator,
+					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
+					colorScheme : 'GnBu',
+					defaultSymbolizer 	: { 'strokeColor' : '#dddddd', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : 1, 'fillColor' : '#cccccc' }
+				});
+				
+				map.zoomToExtent( layer.getDataExtent() );
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Choropleth Layer pre-loaded example</h1>
+		
+		<div id="map"></div>
+		
+	</body>
+	
+</html>
