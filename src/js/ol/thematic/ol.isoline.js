@@ -7,7 +7,6 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 	/* isoline specific */
 	interval 		: 10,
 	baseLine 		: 0,
-	triangles 		: null,
 	
 	showTriangles 	: false,
 	showPoints		: false,
@@ -41,8 +40,9 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 			if ( newOptions.indicator != oldOptions.indicator ||
 					newOptions.interval != oldOptions.interval )
 			{
-				this.updateIsolineFeatures();
-				this.calculateIsolines();
+				// some features should be turned invisible
+				this.updateIsolineFeatures( ( newOptions.indicator != oldOptions.indicator ) );
+				this.updateInterpolation( ( newOptions.indicator != oldOptions.indicator ) );
 			}
 			
 			
@@ -79,6 +79,7 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 		this.layer.addFeatures( triFeatures );
 		*/
 		
+		/*
 		if ( this.showPoints )
 		{
 			var pointsToAdd = [];
@@ -99,40 +100,44 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 			
 			this.layer.addFeatures( pointsToAdd );
 		}
+		*/
 	},
 	
 	/* this would need to be done if the attribute or interval changed */
-	updateIsolineFeatures : function()
+	updateIsolineFeatures : function( indicatorChanged )
 	{
-		var interval = this.interval,
-			intervalValue = Math.floor( this.distribution.minVal / interval ) * interval,
-			isolineFeature = null;
+		indicatorChanged = indicatorChanged || false;
 		
-		this.layer.removeFeatures( this.isolineFeatures );
-		this.isolineFeatures = [];
+		var isolineFeature;
 		
-		while ( ( intervalValue += interval ) <= this.distribution.maxVal )
+		// first, turn any invisible that we don't need
+		for ( var i = 0; i < this.layer.features.length; i++ )
 		{
-			if ( this.layer.getFeatureBy( 'isolineValue', intervalValue ) == null ) // TODO: remove. this check is unnecessary
+			isolineFeature = this.layer.features[i];
+			
+			if ( isolineFeature.isolineValue % this.interval > 0 )
 			{
-				isolineFeature = new OpenLayers.Feature.Vector( new OpenLayers.Geometry.MultiLineString(), { isolineValue : intervalValue });
-				isolineFeature.isolineValue = intervalValue;
-				this.isolineFeatures.push( isolineFeature );
+				if ( isolineFeature.style == null ) isolineFeature.style = {};
+				isolineFeature.style.display = 'none';
+			}
+			
+			if ( indicatorChanged )
+			{
+				isolineFeature.geometry.removeComponents( isolineFeature.geometry.components );
 			}
 		}
-		
-		this.layer.addFeatures( this.isolineFeatures );
 	},
 	
 	updateClassification : function() 
 	{
-		this.calculateDelaunay();
-		this.updateIsolineFeatures();
-		this.calculateIsolines();
+		this.updateDelaunay();
+		//this.updateIsolineFeatures();
+		this.updateInterpolation();
+		//this.updateIsolines();
 	},
 	
 	/* this only needs to be done once for a given point field */
-	calculateDelaunay : function()
+	updateDelaunay : function()
 	{
 		var features = this.features,
 			vertices = [],
@@ -163,15 +168,168 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 	},
 	
 	/* this calculates values along edges and then strings isolines between them */
-	calculateIsolines : function()
+	updateInterpolation : function( indicatorChanged )
 	{
+		indicatorChanged = indicatorChanged || false;
+		
+		// begin new try 2
+		
+		var intervalValue = Math.ceil( this.distribution.minVal / this.interval ) * this.interval,
+			isolineFeature,
+			triangle,
+			featuresToAdd = [],
+			triangle, 
+			minTriangleValue, maxTriangleValue,
+			val0, val1, val2,
+			edge1 = new Edge(), edge2 = new Edge(),
+			x1, y1, x2, y2;
+			
+		while ( intervalValue <= this.distribution.maxVal )
+		{
+			isolineFeature = this.layer.getFeatureBy( 'isolineValue', intervalValue );
+			
+			if ( isolineFeature == null )
+			{
+				isolineFeature = new OpenLayers.Feature.Vector( new OpenLayers.Geometry.MultiLineString(), { isolineValue : intervalValue });
+				isolineFeature.isolineValue = intervalValue;
+				featuresToAdd.push( isolineFeature );
+			}
+			else
+			{
+				// make sure it is visible
+				isolineFeature.style = null;
+				
+				// and continue
+				if ( !indicatorChanged )
+				{
+					intervalValue += this.interval;
+					continue;
+				}
+			}
+			
+			// now loop through all the tri's
+			for ( var i = 0; i < this.triangles.length; i++ )
+			{
+				triangle = this.triangles[i];
+				
+				val0 = triangle.v0.feature.attributes[this.indicator];
+				val1 = triangle.v1.feature.attributes[this.indicator];
+				val2 = triangle.v2.feature.attributes[this.indicator];
+				
+				minTriangleValue = Math.min( val0, val1, val2 );
+				maxTriangleValue = Math.max( val0, val1, val2 );
+				
+				if ( intervalValue <= maxTriangleValue && intervalValue >= minTriangleValue )
+				{
+					edge1.v0 = triangle.v0;
+					edge2.v0 = triangle.v2;
+					
+					edge1.v1 = ( Number.between( val0, val1, intervalValue ) ) ? triangle.v1 : triangle.v2;
+					edge2.v1 = ( Number.between( val1, val2, intervalValue ) ) ? triangle.v1 : triangle.v0;
+					
+					// find the interpolated point along the first edge
+					x1 = (( intervalValue - edge1.v0.feature.attributes[this.indicator] ) / ( edge1.v1.feature.attributes[this.indicator] - edge1.v0.feature.attributes[this.indicator] )) * ( edge1.v1.x - edge1.v0.x ) + edge1.v0.x;
+					y1 = (( intervalValue - edge1.v0.feature.attributes[this.indicator] ) / ( edge1.v1.feature.attributes[this.indicator] - edge1.v0.feature.attributes[this.indicator] )) * ( edge1.v1.y - edge1.v0.y ) + edge1.v0.y;
+					
+					// find the interpolated point along the second edge
+					x2 = (( intervalValue - edge2.v0.feature.attributes[this.indicator] ) / ( edge2.v1.feature.attributes[this.indicator] - edge2.v0.feature.attributes[this.indicator] )) * ( edge2.v1.x - edge2.v0.x ) + edge2.v0.x;
+					y2 = (( intervalValue - edge2.v0.feature.attributes[this.indicator] ) / ( edge2.v1.feature.attributes[this.indicator] - edge2.v0.feature.attributes[this.indicator] )) * ( edge2.v1.y - edge2.v0.y ) + edge2.v0.y;
+					
+					// now add this segment to the isoline feature
+					isolineFeature.geometry.addComponents(
+						[ 
+							new OpenLayers.Geometry.LineString( 
+								[
+								new OpenLayers.Geometry.Point( x1, y1 ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") ), 
+								new OpenLayers.Geometry.Point( x2, y2 ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") )
+								]
+							) 
+						]
+					);
+				}
+			}
+			
+			intervalValue += this.interval;
+		}
+		
+		this.layer.addFeatures( featuresToAdd );
+		
+		// end new try 2
+		
+		/*
+		// begin new try 1
+		
+		var tri, 
+			intervalValue, 
+			minTriangleValue, maxTriangleValue, 
+			isolineFeature, 
+			val0, val1, val2,
+			edge1 = new Edge(), edge2 = new Edge();
+		
+		for ( var i = 0; i < this.triangles.length; i++ )
+		{
+			tri = this.triangles[i];
+			
+			if ( !tri.intervals || indicatorChanged )
+			{
+				tri.intervals = {};
+			}
+			
+			val0 = tri.v0.feature.attributes[this.indicator];
+			val1 = tri.v1.feature.attributes[this.indicator];
+			val2 = tri.v2.feature.attributes[this.indicator];
+			
+			minTriangleValue = Math.min( val0, val1, val2 );
+			maxTriangleValue = Math.max( val0, val1, val2 );
+			
+			intervalValue = Math.ceil( this.distribution.minVal / this.interval ) * this.interval;
+			
+			while ( intervalValue <= maxTriangleValue )
+			{
+				if ( !tri.intervals[intervalValue] )
+				{
+					tri.intervals[ intervalValue ] = [];
+					
+					edge1.v0 = tri.v0;
+					edge2.v0 = tri.v2;
+					
+					edge1.v1 = ( Number.between( val0, val1, intervalValue ) ) ? tri.v1 : tri.v2;
+					edge2.v1 = ( Number.between( val1, val2, intervalValue ) ) ? tri.v1 : tri.v0;
+					
+					// now add this segment to the isoline feature
+					x = (( isolineInterval - v0value ) / ( v1value - v0value )) * ( edge.v1.x - edge.v0.x ) + edge.v0.x;
+					y = (( isolineInterval - v0value ) / ( v1value - v0value )) * ( edge.v1.y - edge.v0.y ) + edge.v0.y;
+					
+					
+				}
+				
+				intervalValue += this.interval;
+			}
+			
+		}
+		
+		// end new try 1
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		// begin old try
+		
 		var triangle,v0value, v1value, minEdgeValue, maxEdgeValue, x, y;
 		
 		for ( var i = 0; i < this.triangles.length; i++ )
 		{
 			triangle = this.triangles[i];
 			
-			triangle.intervals = {};
+			if ( !triangle.intervals || indicatorChanged )
+			{
+				triangle.intervals = {};
+			}
 			
 			// there are 3 edges
 			var edges = [
@@ -189,7 +347,6 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 				minEdgeValue = Math.min( v0value, v1value );
 				maxEdgeValue = Math.max( v0value, v1value );
 				
-				// lets just get an array of the isoline interval values that are on this edge
 				var isolineInterval = Math.floor( minEdgeValue / this.interval ) * this.interval;
 				if ( isolineInterval != minEdgeValue )
 				{
@@ -198,6 +355,11 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 				
 				while ( isolineInterval <= maxEdgeValue )
 				{
+					if ()
+					{
+						continue;
+					}
+					
 					// find the x/y location along the edge for this interval value
 					x = (( isolineInterval - v0value ) / ( v1value - v0value )) * ( edge.v1.x - edge.v0.x ) + edge.v0.x;
 					y = (( isolineInterval - v0value ) / ( v1value - v0value )) * ( edge.v1.y - edge.v0.y ) + edge.v0.y;
@@ -217,7 +379,19 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 				
 			}
 			
-			var vertex0, vertex1, isoFeature;
+		}
+		
+		*/
+	},
+	
+	updateIsolines : function()
+	{
+		var triangle, vertex0, vertex1, isolineInterval, isoFeature;
+		
+		for ( var i = 0; i < this.triangles.length; i++ )
+		{
+			triangle = this.triangles[i];
+			
 			for ( isolineInterval in triangle.intervals )
 			{
 				if ( triangle.intervals.hasOwnProperty( isolineInterval ) )
@@ -240,9 +414,7 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 				}
 				
 			}
-			
 		}
-		
 	},
 	
 	CLASS_NAME: "ol.thematic.Isoline",

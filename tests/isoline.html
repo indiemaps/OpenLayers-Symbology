@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>OpenLayers-Symbology Proportional Symbol example</title>
+		<title>OpenLayers-Symbology Isoline example</title>
 		
 		<!-- styles -->
 		<link rel="stylesheet" type="text/css" href="ext-js/resources/css/ext-all.css" />
@@ -25,7 +25,8 @@
 			var map, thematicLayer,
 				url = '../data/json/city.climate.json',
 				indicator = 'snowaveinchann',
-				legendWidth = 300;
+				legendWidth = 300,
+				intervalSlider;
 			
 			function init()
 			{
@@ -82,6 +83,21 @@
 						$attributeSelect.append( option );
 					}
 				});
+				
+				intervalSlider = new Ext.slider.Multi( {
+					renderTo: 'interval-slider',
+					hideLabel: false,
+					clickToChange: false,
+					width: legendWidth,
+					minValue: 1,
+					maxValue: 20,
+					value: thematicLayer.interval,
+					listeners: {
+						change: function( slider, e ) {
+							updateThematicLayer();
+						}
+					}
+				});
 			};
 			
 			function updateControls()
@@ -101,7 +117,8 @@
 			function updateThematicLayer()
 			{
 				var options = {
-					indicator : $('select#attributes').val()
+					indicator : $('select#attributes').val(),
+					interval : intervalSlider.getValue()[0]
 				};
 				
 				thematicLayer.updateOptions( options );
@@ -126,6 +143,12 @@
 				<div class="control">
 					<h4>attribute</h4>
 					<select id="attributes"></select>
+				</div>
+			</div>
+			<div class="controlArea">
+				<div class="control">
+					<h4>isoline interval</h4>
+					<div class="slider" id="interval-slider"></div>
 				</div>
 			</div>
 		</div>

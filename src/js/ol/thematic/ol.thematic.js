@@ -30,6 +30,11 @@ Array.equalsInOrder = function( arr1, arr2 )
 	return true;
 };
 
+Number.between = function( first, last, test )
+{
+	return (first < last ? test >= first && test <= last : test >= last && test <= first);
+};
+
 
 /**
  * if 'ol' doesn't exist, make it exist
