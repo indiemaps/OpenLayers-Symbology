@@ -3,13 +3,14 @@
 		<title>OpenLayers-Symbology Proportional Symbol example</title>
 		
 		<!-- styles -->
-		<link rel="stylesheet" type="text/css" href="ext-js/resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="ext4/resources/css/ext-all.css" />
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
-		<script type="text/javascript" src="http://openlayers.org/dev/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
-		<script type="text/javascript" src="ext-js/bootstrap.js"></script>
+		
+		<script type="text/javascript" src="ext4/ext-all.js"></script>
 		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
@@ -24,7 +25,6 @@
 			var map, thematicLayer,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
-				format = new OpenLayers.Format.GeoJSON(), /* this is optional as GeoJSON is the default */
 				classBreaksSlider,
 				legendWidth = 300;
 			
@@ -37,33 +37,7 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	// now let's add the main geography as a standard vector layer
-            	var strokeFeatures = new OpenLayers.Layer.Vector("unscaled features", {
-				    strategies: [ new OpenLayers.Strategy.Fixed() ],
-				    protocol: new OpenLayers.Protocol.HTTP({
-				        url: url,
-				        format: format
-				    }),
-				    
-				    style : { 'strokeColor' : '#333', 'strokeWidth' : 3 }
-				});
-				map.addLayer( strokeFeatures );
-            	
-            	
-            	var fillFeatures = new OpenLayers.Layer.Vector("unscaled features", {
-				    strategies: [ new OpenLayers.Strategy.Fixed() ],
-				    protocol: new OpenLayers.Protocol.HTTP({
-				        url: url,
-				        format: format
-				    }),
-				    
-				    style : { 'fillColor' : '#fff', 'fillOpacity' : 1, 'strokeColor' : '#fff' }
-				});
-				map.addLayer( fillFeatures );
-            	
-            	
-            	// and only when that's loaded will we create the cartogram layer
-            	// createThematicLayer();
+            	createThematicLayer();
 			};
 			
 			function createThematicLayer()
@@ -74,28 +48,15 @@
 					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
 					requestSuccess 		: function( request )
 					{
-						// map.zoomToExtent( this.layer.getDataExtent(), true );
+						map.zoomToExtent( this.layer.getDataExtent(), true );
 						
-						/*
 						populateControls();
 						updateControls();
 						updateClassed();
 						wireControls();
-						*/
 					},
 					updateSuccess : function()
 					{
-						if ( !classBreaksSlider || !thematicLayer.classed )
-						{ 
-							return;
-						}
-						
-						var appliedBreaks = thematicLayer.classification.getBoundsArray();
-						
-						if ( !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
-						{
-							updateClassBreaksSlider();
-						}
 						
 					}
 				});

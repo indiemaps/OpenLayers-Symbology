@@ -9,23 +9,24 @@
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		
 		<script type="text/javascript" src="ext4/ext-all.js"></script>
 		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
 		
 		<script type="text/javascript">
 		
 			Ext.require('Ext.slider.*');
 			
-			var map, propLayer,
+			var map, thematicLayer,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
 				format = new OpenLayers.Format.GeoJSON(), /* this is optional as GeoJSON is the default */
 				classBreaksSlider,
-				classSizeSlider,
 				legendWidth = 300;
 			
 			function init()
@@ -37,52 +38,66 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	createPropLayer();
+            	// now let's add the main geography as a standard vector layer
+            	var strokeFeatures = new OpenLayers.Layer.Vector("unscaled features", {
+				    strategies: [ new OpenLayers.Strategy.Fixed() ],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: format
+				    }),
+				    
+				    style : { 'strokeColor' : '#333', 'strokeWidth' : 3 }
+				});
+				map.addLayer( strokeFeatures );
+            	
+            	
+            	var fillFeatures = new OpenLayers.Layer.Vector("unscaled features", {
+				    strategies: [ new OpenLayers.Strategy.Fixed() ],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: format
+				    }),
+				    
+				    style : { 'fillColor' : '#fff', 'fillOpacity' : 1, 'strokeColor' : '#fff' }
+				});
+				map.addLayer( fillFeatures );
+            	
+            	
+            	// and only when that's loaded will we create the cartogram layer
+            	createThematicLayer();
 			};
 			
-			function createPropLayer()
+			function createThematicLayer()
 			{
-				propLayer = new ol.thematic.ProportionalSymbol( map, {
+				thematicLayer = new ol.thematic.Cartogram( map, {
 					url 		: url,
 					indicator 	: indicator,
-					
-					/* TODO get the multi-slider to reflect class breaks on instantiation */
-					classed : true,
-					
-					/* TODO check on this */
-					scaling : 'mathematical',
-					
-					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc',
-											'graphicName' : 'circle' },
+					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
 					requestSuccess 		: function( request )
 					{
-						map.zoomToExtent( this.layer.getDataExtent(), true );
+						// map.zoomToExtent( this.layer.getDataExtent(), true );
 						
+						/*
 						populateControls();
 						updateControls();
 						updateClassed();
 						wireControls();
+						*/
 					},
 					updateSuccess : function()
 					{
-						if ( !classBreaksSlider || !propLayer.classed )
+						if ( !classBreaksSlider || !thematicLayer.classed )
 						{ 
 							return;
 						}
 						
-						var appliedBreaks = propLayer.classification.getBoundsArray();
+						var appliedBreaks = thematicLayer.classification.getBoundsArray();
 						
 						if ( !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
 						{
 							updateClassBreaksSlider();
 						}
 						
-						var appliedSizes = propLayer.sizeInterpolation;
-						
-						if ( !Array.equalsInOrder( appliedSizes, classSizeSlider.getValues() ) )
-						{
-							updateClassSizeSlider();
-						}
 					}
 				});
 			};
@@ -93,7 +108,7 @@
 				// attributes
 				// we'll just base this off the first feature
 				var $attributeSelect = $('select#attributes');
-				var feature = propLayer.layer.features[0];
+				var feature = thematicLayer.layer.features[0];
 				
 				var attributes = feature.attributes,
 					option;
@@ -119,25 +134,20 @@
 					}
 				});
 				
-				var $shapeSelect = $('select#shapes');
+				// class breaks
 				
-				$.each( ol.thematic.ProportionalSymbol.Shapes, function( key, value )
-				{
-					if ( typeof( value ) == 'string' )
-					{
-						option = '<option value="' + value + '">' + value + '</option>';
-						$shapeSelect.append( option );
-					}
-				});
-				
-				var $scalingSelect = $('select#scaling');
-				
-				$.each( ol.thematic.ProportionalSymbol.Scaling, function( key, value )
-				{
-					if ( typeof( value ) == 'string' )
-					{
-						option = '<option value="' + value + '">' + value + '</option>';
-						$scalingSelect.append( option );
+				classBreaksSlider = new Ext.slider.Multi( {
+					renderTo: 'classBreaks-slider',
+			        hideLabel: false,
+			        clickToChange: false,
+			        width: legendWidth,
+			        
+			        minValue: thematicLayer.distribution.minVal,
+			        maxValue: thematicLayer.distribution.maxVal,
+				    listeners: {
+						dragend: function( slider, e ) {
+							onManualClassBreaksSliderChange();
+						}
 					}
 				});
 				
@@ -155,74 +165,47 @@
 					classBreaks : classBreaksSlider.getValues()
 				};
 				
-				propLayer.updateOptions( options );
-				propLayer.applyClassification();
-			};
-			
-			function onManualClassSizeSliderChange()
-			{
-				if ( $( 'select#scaling' ).val() != ol.thematic.ProportionalSymbol.Scaling.MANUAL )
-				{
-					$( 'select#scaling' ).val( ol.thematic.ProportionalSymbol.Scaling.MANUAL );
-				}
-				
-				var options = {
-					scaling : ol.thematic.ProportionalSymbol.Scaling.MANUAL,
-					sizes : classSizeSlider.getValues()
-				};
-				
-				propLayer.updateOptions( options );
-				propLayer.applyClassification();
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
 			};
 			
 			
 			function updateControls()
 			{
 				var $attributeSelect = $('select#attributes');
-				$attributeSelect.val( propLayer.indicator );
+				$attributeSelect.val( thematicLayer.indicator );
 				
 				var $numClassesSelect = $('select#numClasses');
-				$numClassesSelect.val( propLayer.numClasses );
+				$numClassesSelect.val( thematicLayer.numClasses );
 				
 				var $classMethodSelect = $('select#classMethods');
-				$classMethodSelect.val( propLayer.method );
+				$classMethodSelect.val( thematicLayer.method );
 				
 				var $classedInput = $('input#classed');
-				$classedInput.prop( "checked", propLayer.classed );
-				
-				var $shapeSelect = $('select#shapes');
-				$shapeSelect.val( propLayer.defaultSymbolizer.graphicName || 'circle' );
-							
-				var $scalingSelect = $('select#scaling');
-				$scalingSelect.val( propLayer.scaling );
-				
-				if ( propLayer.classed )
-				{
-					updateClassBreaksSlider();
-					updateClassSizeSlider();
-				}
+				$classedInput.prop( "checked", thematicLayer.classed );
 			};
 			
 			function updateClassBreaksSlider()
 			{
-				var newBreaks = propLayer.classification.getBoundsArray();
+				if ( classBreaksSlider == null )
+				{
+					return;
+				}
+				
+				var newBreaks = thematicLayer.classification.getBoundsArray();
 				
 				// if the number of classes has changed, destroy and re-create component
-				if ( !classBreaksSlider || !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
+				if ( !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
 				{
-					if ( classBreaksSlider != null )
-					{
-						classBreaksSlider.destroy();
-					}
-					
+					classBreaksSlider.destroy();
 					classBreaksSlider = new Ext.slider.Multi( {
 						renderTo: 'classBreaks-slider',
 				        hideLabel: false,
 				        clickToChange: false,
 				        width: legendWidth,
 				        
-				        minValue: propLayer.distribution.minVal,
-				        maxValue: propLayer.distribution.maxVal,
+				        minValue: thematicLayer.distribution.minVal,
+				        maxValue: thematicLayer.distribution.maxVal,
 				        values: newBreaks,
 				        listeners: {
 					        dragend: function( slider, e ) {
@@ -234,14 +217,14 @@
 				// else loop through class breaks and set each value on the component
 				else
 				{
-					if ( classBreaksSlider.minValue != propLayer.distribution.minVal )
+					if ( classBreaksSlider.minValue != thematicLayer.distribution.minVal )
 					{
-						classBreaksSlider.setMinValue( propLayer.distribution.minVal );
+						classBreaksSlider.setMinValue( thematicLayer.distribution.minVal );
 					}
 					
-					if ( classBreaksSlider.maxValue != propLayer.distribution.maxVal )
+					if ( classBreaksSlider.maxValue != thematicLayer.distribution.maxVal )
 					{
-						classBreaksSlider.setMaxValue( propLayer.distribution.maxVal );
+						classBreaksSlider.setMaxValue( thematicLayer.distribution.maxVal );
 					}
 					
 					var i = -1;
@@ -250,60 +233,14 @@
 						classBreaksSlider.setValue( i, newBreaks[i] );
 					}
 				}
-			};
-			
-			function updateClassSizeSlider()
-			{
-				var newSizes = propLayer.sizeInterpolation;
 				
-				if ( !classSizeSlider || !classSizeSlider.values || classSizeSlider.values.length != newSizes.length )
-				{
-					if ( classSizeSlider != null )
-					{
-						classSizeSlider.destroy();
-					}
-					
-					classSizeSlider = new Ext.slider.Multi( {
-						renderTo: 'sizing-slider',
-						hideLabel: false,
-						clickToChange: false,
-						width: legendWidth,
-						
-						minValue: propLayer.minSize,
-						maxValue: propLayer.maxSize,
-						values: newSizes,
-						listeners: {
-							dragend: function( slider, e ) {
-								onManualClassSizeSliderChange();
-							}
-						}
-					});
-				}
-				else
-				{
-					if ( classSizeSlider.minValue > propLayer.minSize )
-					{
-						classSizeSlider.setMinValue( propLayer.minSize );
-					}
-					
-					if ( classSizeSlider.maxValue < propLayer.maxSize )
-					{
-						classSizeSlider.setMaxValue( propLayer.maxSize );
-					}
-					
-					var i = -1;
-					while ( ++i < newSizes.length )
-					{
-						classSizeSlider.setValue( i, newSizes[i] );
-					}
-				}
 			};
 			
 			function wireControls()
 			{
 				$( 'div.control select' ).change( function( event )
 				{
-					updatePropLayer();
+					updateThematicLayer();
 				});
 				
 				// classed / unclassed
@@ -311,7 +248,7 @@
 				$( 'input#classed' ).change( function( event )
 				{
 					updateClassed();
-					updatePropLayer();
+					updateThematicLayer();
 				});
 			};
 			
@@ -323,50 +260,36 @@
 				$( 'div#classMethods select' ).prop( 'disabled', !classed );
 				
 				classBreaksSlider.setDisabled( !classed );
-				classSizeSlider.setDisabled( !classed );
-				
-				if ( !classed && (propLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL) )
-				{
-					$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
-				}
 			};
 			
-			function updatePropLayer()
+			function updateThematicLayer()
 			{
 				// if the variable has changed and the current class. method is bounds, switch to equal interval
-				if ( propLayer.method == ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS )
+				if ( thematicLayer.method == ol.thematic.Distribution.CLASSIFY_WITH_BOUNDS )
 				{
 					if 
 					(
-						( $('select#numClasses').val() != propLayer.numClasses )
+						( $('select#attributes').val() != thematicLayer.indicator )
 						||
-						( $('select#attributes').val() != propLayer.indicator )
+						( $('select#numClasses').val() != thematicLayer.numClasses )
 					)
 					{
 						$('select#classMethods').val( ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS );
 					}
 				}
 				
-				if ( propLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL )
-				{
-					if ( $('select#numClasses').val() != propLayer.numClasses )
-					{
-						$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
-					}
-				}
 				
 				var options = {
 					indicator : $('select#attributes').val(),
 					numClasses : $('select#numClasses').val(),
 					method : $('select#classMethods').val(),
-					classed : $( 'input#classed' ).prop( "checked" ),
-					scaling : $( 'select#scaling' ).val()
+					classed : $( 'input#classed' ).prop( "checked" )
 				};
 				
-				propLayer.defaultSymbolizer.graphicName = $('select#shapes').val();
+				thematicLayer.defaultSymbolizer.graphicName = $('select#shapes').val();
 				
-				propLayer.updateOptions( options );
-				propLayer.applyClassification();
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
 			};
 			
 		</script>
@@ -375,7 +298,7 @@
 
 
 	<body onload="init()">
-		<h1>OpenLayers-Symbology Proportional Symbol example</h1>
+		<h1>OpenLayers-Symbology Cartogram example</h1>
 		
 		<div id="map"></div>
 		
@@ -418,26 +341,9 @@
 				
 				<div class="control" id="legend">
 					<h4>the legend is the key</h4>
-					<div class="slider" id="classBreaks-slider"></div>
+					<div id="classBreaks-slider"></div>
 				</div>
 
-			</div>
-			
-			<div class="controlArea">
-				<h3>scaling / shapes</h3>
-				
-				<div class="control">
-					<h4>scaling method</h4>
-					<select id="scaling"></select>
-					
-					<div class="slider" id="sizing-slider"></div>
-				</div>
-				
-				<div class="control">
-					<h4>shape</h4>
-					<select id="shapes"></select>
-				</div>
-				
 			</div>
 		</div>
 	</body>

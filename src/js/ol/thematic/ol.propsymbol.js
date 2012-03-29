@@ -19,11 +19,6 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	
 	classed : false,
 	
-	initialize : function( map, options )
-	{
-		ol.thematic.LayerBase.prototype.initialize.apply( this, arguments );
-	},
-	
 	addFeatures : function( features )
 	{
 		var featuresToAdd = [];

@@ -5,7 +5,22 @@
 ol.thematic.Cartogram = OpenLayers.Class( ol.thematic.ProportionalSymbol, 
 {
 	/* this determines whether features will scale up/down as the user zooms in/out */
-	scaleOnZoom : true,
+	resizeOnZoom : false,
+	
+	initialize : function( map, options )
+	{
+		ol.thematic.ProportionalSymbol.prototype.initialize.apply( this, arguments );
+		
+		if ( this.resizeOnZoom == false )
+		{
+			// register a listener on all zoom events
+			this.map.events.register( 'zoomend', this, function()
+			{
+				this.applyClassification();
+			});
+			
+		}
+	},
 	
 	addFeatures : function( features )
 	{
