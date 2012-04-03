@@ -65,7 +65,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	            newOptions.scaling		!= oldOptions.scaling ||
 	            newOptions.numClasses 	!= oldOptions.numClasses ||
 	            newOptions.classBreaks 	!= null ||
-	            ( newOptions.classed == true && oldOptions.classed == false )
+	            newOptions.classed		!= oldOptions.classed
 	        )
 	        {
 	        	this.updateClassification();
@@ -133,132 +133,102 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		{
 			this.createSizeInterpolation();
 		}
+		
+		// apply the desired areas to each feature's attribute object
+		this.applySizesToFeatures();
+	},
+	
+	/**
+	 * This will set the 'desiredArea' attribute on each feature
+	 */
+	applySizesToFeatures : function()
+	{
+		var sizeMax = this.maxSize,
+			sizeMin = this.minSize;
+			
+		if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+		{
+			var c = this.perceptualOptions.powerFunctionConstant,
+				n = this.perceptualOptions.powerFunctionExponent,
+				c1 = Math.pow( 1/c, ( 1/n ) );
+					
+			sizeMax = c * Math.pow( sizeMax, n );
+			sizeMin = c * Math.pow( sizeMin, n );
+		}
+			
+		var feature, val, desiredArea;
+		for ( var i = 0; i < this.layer.features.length; i++ )
+		{
+			feature = this.layer.features[i],
+				val = feature.attributes[ this.indicator ];
+			
+			if ( this.classed )
+			{
+				var classNum = 0;
+				var boundsArray = this.classification.getBoundsArray();
+				
+				while ( val >= boundsArray[classNum] && classNum < this.numClasses )
+				{
+					classNum++;
+				}
+				
+				desiredArea = this.sizeInterpolation[ classNum-1 ];
+			}
+			else
+			{
+				desiredArea = (val - this.distribution.minVal) / (this.distribution.maxVal - this.distribution.minVal) * (sizeMax - sizeMin) + sizeMin;
+					
+				if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
+				{
+					desiredArea = c1 * Math.pow( desiredArea, ( 1 / n ) );
+				}
+			}
+			
+			feature.attributes.desiredArea = desiredArea;
+		}
 	},
 	
 	applyClassification : function( options )
 	{
 		this.updateOptions(options);
 		
-		var rules, symbolizer, context;
-		
-		// classed first
-		if ( this.classed )
+		var that = this;
+		var shape = 'circle';
+		if ( this.defaultSymbolizer && this.defaultSymbolizer.graphicName )
 		{
-			var boundsArray = this.classification.getBoundsArray();
-			var area;
-			var shape = 'circle';
-			if ( this.defaultSymbolizer && this.defaultSymbolizer.graphicName )
-			{
-				shape = this.defaultSymbolizer.graphicName;
-			}
+			shape = this.defaultSymbolizer.graphicName;
+		}
 			
-			rules = [];
-			
-			// default rule
-			var rule = new OpenLayers.Rule(
+		var context = {
+			getSize : function( feature )
 			{
-				symbolizer: this.defaultSymbolizer
-			});
-				
-			rules.push( rule );
-			
-			var pr;
-			for (var i = 0; i < boundsArray.length -1; i++) 
-			{
-				area = this.sizeInterpolation[ i ];
+				var size = feature.attributes.desiredArea;
+					
+				// the returned pointRadius depends on the shape
+				var pr;
+					
 				switch( shape )
 				{
 					case 'square':
-						pr = Math.sqrt( area ) / 2;
+						pr = Math.sqrt( size ) / 2;
 						break;
 					case 'triangle':
-						pr = Math.sqrt( ( 4 / Math.sqrt(3) ) * area ) / 2;
+						pr = Math.sqrt( ( 4 / Math.sqrt(3) ) * size ) / 2;
 						break;
 					default: /* circle or anything else */
-						pr = Math.sqrt( area / Math.PI );
+						pr = Math.sqrt( size / Math.PI );
 				}
-				
-				var rule = new OpenLayers.Rule(
-				{
-					symbolizer: { pointRadius: pr },
 					
-					filter: new OpenLayers.Filter.Comparison(
-					{
-						type: OpenLayers.Filter.Comparison.BETWEEN,
-						property: this.indicator,
-						lowerBoundary: boundsArray[i],
-						upperBoundary: boundsArray[i + 1]
-					})
-				});
-				
-				rules.push( rule );
+				return pr;
 			}
-		}
-		// unclassed (default)
-		else
-		{
-			symbolizer = {
-				pointRadius : "${getSize}",
-				graphicName : this.defaultSymbolizer.graphicName
-			};
-					
-			var that = this;
-			
-			var shape = 'circle';
-			if ( this.defaultSymbolizer && this.defaultSymbolizer.graphicName )
-			{
-				shape = this.defaultSymbolizer.graphicName;
-			}
-			
-			var size,
-				sizeMax = this.maxSize,
-				sizeMin = this.minSize;
-			
-			if ( this.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
-			{
-				var c = this.perceptualOptions.powerFunctionConstant,
-					n = this.perceptualOptions.powerFunctionExponent,
-					c1 = Math.pow( 1/c, ( 1/n ) );
-					
-				sizeMax = c * Math.pow( sizeMax, n );
-				sizeMin = c * Math.pow( sizeMin, n );
-			}
-			
-			context = {
-				getSize : function( feature )
-				{
-					var val = feature.attributes[ that.indicator ];
-					size = (val - that.distribution.minVal) / (that.distribution.maxVal - that.distribution.minVal) * (sizeMax - sizeMin) + sizeMin;
-					
-					if ( that.scaling == ol.thematic.ProportionalSymbol.Scaling.PERCEPTUAL )
-					{
-						// TODO
-						
-						size = c1 * Math.pow( size, ( 1 / n ) );
-					}
-					
-					// the returned pointRadius depends on the shape
-					var pr;
-					
-					switch( shape )
-					{
-						case 'square':
-							pr = Math.sqrt( size ) / 2;
-							break;
-						case 'triangle':
-							pr = Math.sqrt( ( 4 / Math.sqrt(3) ) * size ) / 2;
-							break;
-						default: /* circle or anything else */
-							pr = Math.sqrt( size / Math.PI );
-					}
-					
-					return pr;
-				}
-			};
-		}
+		};
 		
-		
-		this.extendStyle(rules, symbolizer, context);
+		var symbolizer = {
+			pointRadius : "${getSize}",
+			graphicName : this.defaultSymbolizer.graphicName
+		};
+				
+		this.extendStyle(null, symbolizer, context);
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	

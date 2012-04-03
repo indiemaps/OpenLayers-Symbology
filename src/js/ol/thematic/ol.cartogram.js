@@ -33,7 +33,6 @@ ol.thematic.Cartogram = OpenLayers.Class( ol.thematic.ProportionalSymbol,
 		
 		var features = this.layer.features, 
 			feature,
-			value, 
 			geometry,
 			centroid,
 			area, desiredArea, scale;
@@ -41,12 +40,11 @@ ol.thematic.Cartogram = OpenLayers.Class( ol.thematic.ProportionalSymbol,
 		for (var i = 0; i < features.length; i++) 
 		{
 			feature = features[i],
-				value = Number( feature.attributes[ this.indicator ] ),
 				geometry = feature.geometry,
 				centroid = geometry.getCentroid(),
         		area = geometry.getArea() / Math.pow( this.map.getResolution(), 2 );
         	
-        	desiredArea = ( value / this.distribution.maxVal ) * this.maxSize;
+        	desiredArea = feature.attributes.desiredArea;
         	
         	desiredScale = Math.sqrt( desiredArea / area ); 
         	feature.geometry.resize( desiredScale, centroid );
