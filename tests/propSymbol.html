@@ -46,10 +46,8 @@
 					url 		: url,
 					indicator 	: indicator,
 					
-					/* TODO get the multi-slider to reflect class breaks on instantiation */
 					classed : true,
 					
-					/* TODO check on this */
 					scaling : 'mathematical',
 					
 					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc',
@@ -65,21 +63,21 @@
 					},
 					updateSuccess : function()
 					{
-						if ( !classBreaksSlider || !propLayer.classed )
+						if ( !propLayer.classed )
 						{ 
 							return;
 						}
 						
 						var appliedBreaks = propLayer.classification.getBoundsArray();
 						
-						if ( !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
+						if ( ( classBreaksSlider == null ) || !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
 						{
 							updateClassBreaksSlider();
 						}
 						
 						var appliedSizes = propLayer.sizeInterpolation;
 						
-						if ( !Array.equalsInOrder( appliedSizes, classSizeSlider.getValues() ) )
+						if ( ( classSizeSlider == null ) || !Array.equalsInOrder( appliedSizes, classSizeSlider.getValues() ) )
 						{
 							updateClassSizeSlider();
 						}
@@ -322,8 +320,14 @@
 				$( 'div#numClasses select' ).prop( 'disabled', !classed );
 				$( 'div#classMethods select' ).prop( 'disabled', !classed );
 				
-				classBreaksSlider.setDisabled( !classed );
-				classSizeSlider.setDisabled( !classed );
+				if ( classBreaksSlider != null )
+				{
+					classBreaksSlider.setDisabled( !classed );
+				}
+				if ( classSizeSlider != null )
+				{
+					classSizeSlider.setDisabled( !classed );
+				}
 				
 				if ( !classed && (propLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL) )
 				{

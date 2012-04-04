@@ -25,7 +25,7 @@
 			var map, thematicLayer,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
-				classBreaksSlider,
+				classBreaksSlider, classSizeSlider,
 				legendWidth = 300;
 			
 			function init()
@@ -45,6 +45,7 @@
 				thematicLayer = new ol.thematic.Cartogram( map, {
 					url 		: url,
 					indicator 	: indicator,
+					classed : false,
 					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
 					requestSuccess 		: function( request )
 					{
@@ -57,7 +58,24 @@
 					},
 					updateSuccess : function()
 					{
+						if ( !thematicLayer.classed )
+						{ 
+							return;
+						}
 						
+						var appliedBreaks = thematicLayer.classification.getBoundsArray();
+						
+						if ( ( classBreaksSlider == null ) || !Array.equalsInOrder( appliedBreaks, classBreaksSlider.getValues() ) )
+						{
+							updateClassBreaksSlider();
+						}
+						
+						var appliedSizes = thematicLayer.sizeInterpolation;
+						
+						if ( ( classSizeSlider == null ) || !Array.equalsInOrder( appliedSizes, classSizeSlider.getValues() ) )
+						{
+							updateClassSizeSlider();
+						}
 					}
 				});
 			};
@@ -94,20 +112,14 @@
 					}
 				});
 				
-				// class breaks
+				var $scalingSelect = $('select#scaling');
 				
-				classBreaksSlider = new Ext.slider.Multi( {
-					renderTo: 'classBreaks-slider',
-			        hideLabel: false,
-			        clickToChange: false,
-			        width: legendWidth,
-			        
-			        minValue: thematicLayer.distribution.minVal,
-			        maxValue: thematicLayer.distribution.maxVal,
-				    listeners: {
-						dragend: function( slider, e ) {
-							onManualClassBreaksSliderChange();
-						}
+				$.each( ol.thematic.ProportionalSymbol.Scaling, function( key, value )
+				{
+					if ( typeof( value ) == 'string' )
+					{
+						option = '<option value="' + value + '">' + value + '</option>';
+						$scalingSelect.append( option );
 					}
 				});
 				
@@ -129,6 +141,23 @@
 				thematicLayer.applyClassification();
 			};
 			
+			function onManualClassSizeSliderChange()
+			{
+				if ( $( 'select#scaling' ).val() != ol.thematic.ProportionalSymbol.Scaling.MANUAL )
+				{
+					$( 'select#scaling' ).val( ol.thematic.ProportionalSymbol.Scaling.MANUAL );
+				}
+				
+				var options = {
+					scaling : ol.thematic.ProportionalSymbol.Scaling.MANUAL,
+					sizes : classSizeSlider.getValues()
+				};
+				
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
+			};
+			
+			
 			
 			function updateControls()
 			{
@@ -143,21 +172,29 @@
 				
 				var $classedInput = $('input#classed');
 				$classedInput.prop( "checked", thematicLayer.classed );
+				
+				var $scalingSelect = $('select#scaling');
+				$scalingSelect.val( thematicLayer.scaling );
+				
+				if ( thematicLayer.classed )
+				{
+					updateClassBreaksSlider();
+					updateClassSizeSlider();
+				}
 			};
 			
 			function updateClassBreaksSlider()
 			{
-				if ( classBreaksSlider == null )
-				{
-					return;
-				}
-				
 				var newBreaks = thematicLayer.classification.getBoundsArray();
 				
 				// if the number of classes has changed, destroy and re-create component
-				if ( !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
+				if ( !classBreaksSlider || !classBreaksSlider.values || classBreaksSlider.values.length != newBreaks.length )
 				{
-					classBreaksSlider.destroy();
+					if ( classBreaksSlider != null )
+					{
+						classBreaksSlider.destroy();
+					}
+					
 					classBreaksSlider = new Ext.slider.Multi( {
 						renderTo: 'classBreaks-slider',
 				        hideLabel: false,
@@ -193,7 +230,53 @@
 						classBreaksSlider.setValue( i, newBreaks[i] );
 					}
 				}
+			};
+			
+			function updateClassSizeSlider()
+			{
+				var newSizes = thematicLayer.sizeInterpolation;
 				
+				if ( !classSizeSlider || !classSizeSlider.values || classSizeSlider.values.length != newSizes.length )
+				{
+					if ( classSizeSlider != null )
+					{
+						classSizeSlider.destroy();
+					}
+					
+					classSizeSlider = new Ext.slider.Multi( {
+						renderTo: 'sizing-slider',
+						hideLabel: false,
+						clickToChange: false,
+						width: legendWidth,
+						
+						minValue: thematicLayer.minSize,
+						maxValue: thematicLayer.maxSize,
+						values: newSizes,
+						listeners: {
+							dragend: function( slider, e ) {
+								onManualClassSizeSliderChange();
+							}
+						}
+					});
+				}
+				else
+				{
+					if ( classSizeSlider.minValue > thematicLayer.minSize )
+					{
+						classSizeSlider.setMinValue( thematicLayer.minSize );
+					}
+					
+					if ( classSizeSlider.maxValue < thematicLayer.maxSize )
+					{
+						classSizeSlider.setMaxValue( thematicLayer.maxSize );
+					}
+					
+					var i = -1;
+					while ( ++i < newSizes.length )
+					{
+						classSizeSlider.setValue( i, newSizes[i] );
+					}
+				}
 			};
 			
 			function wireControls()
@@ -219,7 +302,19 @@
 				$( 'div#numClasses select' ).prop( 'disabled', !classed );
 				$( 'div#classMethods select' ).prop( 'disabled', !classed );
 				
-				classBreaksSlider.setDisabled( !classed );
+				if ( classBreaksSlider != null )
+				{
+					classBreaksSlider.setDisabled( !classed );
+				}
+				if ( classSizeSlider != null )
+				{
+					classSizeSlider.setDisabled( !classed );
+				}
+				
+				if ( !classed && (thematicLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL) )
+				{
+					$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
+				}
 			};
 			
 			function updateThematicLayer()
@@ -229,25 +324,31 @@
 				{
 					if 
 					(
-						( $('select#attributes').val() != thematicLayer.indicator )
-						||
 						( $('select#numClasses').val() != thematicLayer.numClasses )
+						||
+						( $('select#attributes').val() != thematicLayer.indicator )
 					)
 					{
 						$('select#classMethods').val( ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS );
 					}
 				}
 				
+				if ( thematicLayer.scaling == ol.thematic.ProportionalSymbol.Scaling.MANUAL )
+				{
+					if ( $('select#numClasses').val() != thematicLayer.numClasses )
+					{
+						$('select#scaling').val( ol.thematic.ProportionalSymbol.Scaling.MATHEMATICAL );
+					}
+				}
 				
 				var options = {
 					indicator : $('select#attributes').val(),
 					numClasses : $('select#numClasses').val(),
 					method : $('select#classMethods').val(),
-					classed : $( 'input#classed' ).prop( "checked" )
+					classed : $( 'input#classed' ).prop( "checked" ),
+					scaling : $( 'select#scaling' ).val()
 				};
-				
-				thematicLayer.defaultSymbolizer.graphicName = $('select#shapes').val();
-				
+								
 				thematicLayer.updateOptions( options );
 				thematicLayer.applyClassification();
 			};
@@ -301,9 +402,21 @@
 				
 				<div class="control" id="legend">
 					<h4>the legend is the key</h4>
-					<div id="classBreaks-slider"></div>
+					<div class="slider" id="classBreaks-slider"></div>
 				</div>
 
+			</div>
+			
+			<div class="controlArea">
+				<h3>scaling / shapes</h3>
+				
+				<div class="control">
+					<h4>scaling method</h4>
+					<select id="scaling"></select>
+					
+					<div class="slider" id="sizing-slider"></div>
+				</div>
+				
 			</div>
 		</div>
 	</body>

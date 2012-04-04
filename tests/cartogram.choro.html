@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Choro-Cartogram example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="ext4/resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		
+		<script type="text/javascript" src="ext4/ext-all.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
+		
+		<script type="text/javascript">
+		
+			Ext.require('Ext.slider.*');
+			
+			var map, thematicLayer,
+				url = '../data/json/states.geo.json',
+				indicator = 'POP2010',
+				classBreaksSlider, classSizeSlider,
+				legendWidth = 300;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createThematicLayer();
+			};
+			
+			function createThematicLayer()
+			{
+				thematicLayer = new ol.thematic.Cartogram( map, {
+					url 		: url,
+					indicator 	: indicator,
+					classed : false,
+					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
+					requestSuccess 		: function( request )
+					{
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						colorCartogram();
+					}
+				});
+			};
+			
+			function colorCartogram()
+			{
+				
+			};
+			
+			
+		</script>
+	</head>
+	
+
+
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Choro-Cartogram example</h1>
+		
+		<div id="map"></div>
+		
+	</body>
+	
+</html>

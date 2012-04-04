@@ -2,7 +2,6 @@
 	<head>
 		<title>OpenLayers-Symbology Noncontiguous Cartogram Projected example</title>
 		
-		
 		<!-- styles -->
 		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
 		
@@ -12,7 +11,9 @@
 		<script type="text/javascript" src="../lib/proj4js-combined.js"></script>
 		
 		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
 		
 		<script type="text/javascript">
@@ -44,88 +45,16 @@
 			{
 				cartoLayer = new ol.thematic.Cartogram( map, {
 					'url' : url,
+					'indicator' : indicator,
 					'requestSuccess' : function( request )
 					{
-						this.updateOptions( {
-							'indicator' : indicator
-						});
-						this.applyClassification();
-						
 						map.zoomToExtent( this.layer.getDataExtent(), true );
-						
-						populateControls();
-						updateControls();
-						wireControls();
 					},
 					
-					defaultSymbolizer : { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'fillOpacity' : 1, 'fillColor' : 0 }
+					defaultSymbolizer : { 'strokeColor' : '#000000', 'strokeWidth' : 2, 'fillOpacity' : 1, 'fillColor' : '#dddddd' }
 				});
 			};
 			
-			
-			function populateControls()
-			{
-				// attributes
-				// we'll just base this off the first feature
-				var $attributeSelect = $('select#attributes');
-				var feature = cartoLayer.layer.features[0];
-				
-				var attributes = feature.attributes,
-					option;
-								
-				$.each( attributes, function( key, value )
-				{
-					// see if value is a number
-					if ( !isNaN( value ) )
-					{
-						option = '<option value="' + key + '">' + key + '</option>';
-						$attributeSelect.append( option );
-					}
-				});
-				
-			};
-			
-			function updateControls()
-			{
-				var $attributeSelect = $('select#attributes');
-				$attributeSelect.val( cartoLayer.indicator );
-				
-				var $classedInput = $('input#classed');
-				$classedInput.prop( "checked", cartoLayer.classed );
-				
-				updateClassed();
-			};
-			
-			function wireControls()
-			{
-				$( 'div.control select' ).change( function( event )
-				{
-					updateCartogramLayer();
-				});
-				
-				$( 'input#classed' ).change( function( event )
-				{
-					updateClassed();
-				});
-			};
-			
-			function updateClassed()
-			{
-				var classed = $( 'input#classed' ).prop( "checked" );
-				
-				$( 'div#numClasses select' ).prop( 'disabled', !classed );
-				$( 'div#classMethods select' ).prop( 'disabled', !classed );
-			};
-			
-			function updateCartogramLayer()
-			{
-				var options = {
-					indicator : $('select#attributes').val()
-				};
-				
-				cartoLayer.updateOptions( options );
-				cartoLayer.applyClassification();
-			};
 			
 			
 		</script>
@@ -138,45 +67,6 @@
 		
 		<div id="map"></div>
 		
-		<div id="controls">
-			<h2>controls:</h2>
-			
-			<div class="controlArea">
-				<h3>data</h3>
-				
-				<div class="control">
-					<h4>attribute</h4>
-					<select id="attributes"></select>
-				</div>
-			</div>
-			
-			<div class="controlArea">
-				<h3>classification</h3>
-				
-				<div class="control">
-					<input id="classed" type="checkbox">Classed</input>
-				</div>
-				
-				<div class="control" id="numClasses">
-					<h4>number of classes</h4>
-					<select id="numClasses">
-						<option value="3">3</option>
-						<option value="4">4</option>
-						<option value="5">5</option>
-						<option value="6">6</option>
-						<option value="7">7</option>
-						<option value="8">8</option>
-						<option value="9">9</option>
-					</select>
-				</div>
-				
-				<div class="control" id="classMethods">
-					<h4>classification method</h4>
-					<select id="classMethods"></select>
-				</div>
-
-			</div>
-		</div>
 	</body>
 	
 </html>

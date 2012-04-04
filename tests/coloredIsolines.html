@@ -1,0 +1,171 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Colored Isoline example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="ext4/resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery, delaunay ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="ext4/ext-all.js"></script>
+		
+		<script type="text/javascript" src="../lib/delaunay.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.isoline.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
+		
+		<script type="text/javascript">
+		
+			Ext.require('Ext.slider.*');
+			
+			var map, thematicLayer,
+				url = '../data/json/city.climate.json',
+				indicator = 'julyavetemp',
+				legendWidth = 300,
+				intervalSlider;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createThematicLayer();
+			};
+			
+			function createThematicLayer()
+			{
+				thematicLayer = new ol.thematic.Isoline( map, {
+					url 		: url,
+					indicator 	: indicator,
+					interval : 2,
+					defaultSymbolizer : { 'pointRadius' : 3, 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'strokeWidth' : 1, 'strokeColor' : '#0099cc' },
+					
+					requestSuccess 		: function( request )
+					{
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						populateControls();
+						updateControls();
+						wireControls();
+						
+						colorIsolines();
+					},
+					
+					updateSuccess : function()
+					{
+						colorIsolines();
+					}
+				});
+			};
+			
+			function colorIsolines()
+			{
+				var choroLayer = new ol.thematic.Choropleth( map, {
+					indicator : 'isolineValue',
+					layer : thematicLayer.layer,
+					colorStrokes : true,
+					colorScheme : 'YlOrRd'
+				});
+			};
+			
+			function populateControls()
+			{
+				// attributes
+				// we'll just base this off the first feature
+				var $attributeSelect = $('select#attributes');
+				var feature = thematicLayer.features[0];
+				
+				var attributes = feature.attributes,
+					option;
+								
+				$.each( attributes, function( key, value )
+				{
+					// see if value is a number
+					if ( !isNaN( value ) )
+					{
+						option = '<option value="' + key + '">' + key + '</option>';
+						$attributeSelect.append( option );
+					}
+				});
+				
+				intervalSlider = new Ext.slider.Multi( {
+					renderTo: 'interval-slider',
+					hideLabel: false,
+					clickToChange: false,
+					width: legendWidth,
+					minValue: 1,
+					maxValue: 20,
+					value: thematicLayer.interval,
+					listeners: {
+						change: function( slider, e ) {
+							updateThematicLayer();
+						}
+					}
+				});
+			};
+			
+			function updateControls()
+			{
+				var $attributeSelect = $('select#attributes');
+				$attributeSelect.val( thematicLayer.indicator );
+			};
+			
+			function wireControls()
+			{
+				$( 'div.control select' ).change( function( event )
+				{
+					updateThematicLayer();
+				});
+			};
+			
+			function updateThematicLayer()
+			{
+				var options = {
+					indicator : $('select#attributes').val(),
+					interval : intervalSlider.getValue()[0]
+				};
+				
+				thematicLayer.updateOptions( options );
+				thematicLayer.applyClassification();
+			};
+		
+		</script>
+		
+	</head>
+	
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Colored Isoline example</h1>
+		
+		<div id="map"></div>
+		
+		<div id="controls">
+			<h2>controls:</h2>
+			
+			<div class="controlArea">
+				<h3>data</h3>
+				
+				<div class="control">
+					<h4>attribute</h4>
+					<select id="attributes"></select>
+				</div>
+			</div>
+			<div class="controlArea">
+				<div class="control">
+					<h4>isoline interval</h4>
+					<div class="slider" id="interval-slider"></div>
+				</div>
+			</div>
+		</div>
+		
+	</body>
+</html>
