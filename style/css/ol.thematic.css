@@ -1,3 +1,5 @@
+/* this just contains some styles that are used in the tests of OpenLayers-Symbology */
+
 div#map {
 	width: 600px;
 	height: 600px;
@@ -76,4 +78,81 @@ h3 {
 h4 {
 	font-size: 12px;
 	margin-bottom: 14px;
+}
+
+/* these styles are just for the olson cartogram reproduction */
+
+div#container {
+	width: 800px;
+	height: 533px;
+	border: 2px solid #000;
+	
+	position: relative;
+}
+
+div.olson#map {
+	width: 100%;
+	height: 100%;
+	
+	border: none;
+}
+
+div#container h1 {
+	font-size: 14px;
+	font-family: sans-serif;
+	text-transform: uppercase;
+	
+	position: absolute;
+	
+	top: 17px;
+	left: 230px;
+	
+	color: #333;
+	
+	letter-spacing: 2px;
+}
+
+div#cartogramLegend {
+	position: absolute;
+	left: 22px;
+	bottom: 66px;
+	
+	clear: right;
+}
+
+div#legendChip {
+	width: 18px;
+	height: 18px;
+	
+	background-color: #ddd;
+	border: 1px solid #333;
+	
+	float: left;
+}
+
+
+p#legendText {
+	float: left;
+	
+	padding-top: 0;
+	margin-top: 4px;
+	
+	margin-left: 6px;
+	
+	font-size: 11px;
+	font-family: sans-serif;
+	
+	letter-spacing: 1px;
+}
+
+p#credits {
+	position: absolute;
+	
+	margin-bottom: 4px;
+	left: 20px;
+	bottom: 0;
+	
+	font-size: 10px;
+	font-family: sans-serif;
+	letter-spacing: 1px;
 }

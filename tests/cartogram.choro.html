@@ -48,7 +48,7 @@
 					url 		: url,
 					indicator 	: indicator,
 					classed : false,
-					defaultSymbolizer 	: { 'strokeColor' : '#ff0000', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
+					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
 					requestSuccess 		: function( request )
 					{
 						map.zoomToExtent( this.layer.getDataExtent(), true );
@@ -60,7 +60,10 @@
 			
 			function colorCartogram()
 			{
-				
+				var choroLayer = new ol.thematic.Choropleth( map, {
+					indicator : indicator,
+					layer : thematicLayer.layer
+				});
 			};
 			
 			
