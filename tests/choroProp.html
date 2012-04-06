@@ -17,10 +17,9 @@
 		
 		<script type="text/javascript">
 					
-			var map, layer, choroLayer, propLayer,
+			var map, propLayer,
 				url = '../data/json/city.climate.json',
-				indicator = 'julyavetemp',
-				format = null;
+				indicator = 'julyavetemp';
 			
 			function init()
 			{
@@ -31,42 +30,29 @@
                     {isBaseLayer: true} );
             	map.addLayer(layer);
             	
-            	createVectorLayer();
+            	
+            	propLayer = new ol.thematic.ProportionalSymbol( map, {
+					url : url,
+					indicator : indicator,
+					
+					requestSuccess : function()
+					{
+						map.zoomToExtent( this.layer.getDataExtent() );
+						
+						colorSymbols();
+					}
+				});
 			};
 			
-			function createVectorLayer()
+			function colorSymbols()
 			{
-				layer = new OpenLayers.Layer.Vector( 'features', 
-				{
-					strategies: [new OpenLayers.Strategy.Fixed()],
-				    protocol: new OpenLayers.Protocol.HTTP({
-				        url: url,
-				        format: new OpenLayers.Format.GeoJSON()
-				    }),
-				    
-				    
-				});
-				map.addLayer( layer );
-				
-				layer.events.register( 'featuresadded', null, createThematicLayers );
-			};
-			
-			function createThematicLayers()
-			{
-				propLayer = new ol.thematic.ProportionalSymbol( map, {
-					layer : layer,
-					indicator : indicator
-				});
-				
-				choroLayer = new ol.thematic.Choropleth( map, {
-					layer 		: layer,
+				var choroLayer = new ol.thematic.Choropleth( map, {
+					layer 		: propLayer.layer,
 					indicator 	: indicator,
 					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
 					colorScheme : 'GnBu',
 					defaultSymbolizer 	: { 'strokeColor' : '#dddddd', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : 1, 'fillColor' : '#cccccc' }
 				});
-				
-				map.zoomToExtent( layer.getDataExtent() );
 			};
 		</script>
 	</head>

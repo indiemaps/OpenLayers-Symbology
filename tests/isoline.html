@@ -24,7 +24,7 @@
 			
 			var map, thematicLayer,
 				url = '../data/json/city.climate.json',
-				indicator = 'snowaveinchann',
+				indicator = 'julyavetemp',
 				legendWidth = 300,
 				intervalSlider;
 			
@@ -45,12 +45,13 @@
 				thematicLayer = new ol.thematic.Isoline( map, {
 					url 		: url,
 					indicator 	: indicator,
-					interval : 5,
+					interval : 2,
+					showTIN : false,
 					defaultSymbolizer : { 'pointRadius' : 3, 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'strokeWidth' : 1, 'strokeColor' : '#0099cc' },
 					
 					requestSuccess 		: function( request )
 					{
-						map.zoomToExtent( this.layer.getDataExtent(), true );
+						map.setCenter( this.layer.getDataExtent().getCenterLonLat(), 4 );
 						
 						populateControls();
 						updateControls();
