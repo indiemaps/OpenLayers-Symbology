@@ -10,6 +10,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	sizes	: [105, 205, 305, 405, 1900], /* could be a user-settable array of symbol areas for each data class */
 	sizeInterpolation : null, 
 	
+	sizeStrokes : false,
 	scaling : 'mathematical', 
 	
 	perceptualOptions : {
@@ -227,13 +228,18 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 			pointRadius : "${getSize}",
 			graphicName : this.defaultSymbolizer.graphicName
 		};
+		
+		if ( this.sizeStrokes )
+		{
+			symbolizer.strokeWidth = "${desiredArea}";
+		}
 				
 		this.extendStyle(null, symbolizer, context);
 		ol.thematic.LayerBase.prototype.applyClassification.apply(this, arguments);
 	},
 	
 	CLASS_NAME: "ol.thematic.ProportionalSymbol",
-	IS_OVERLAY_SYMBOLOGY : true
+	IS_OVERLAY_SYMBOLOGY : false
 	
 });
 

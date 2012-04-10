@@ -156,7 +156,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			
 			if ( this.colorStrokes )
 			{
-				symbolizer.fillColor = "${getColor}";
+				symbolizer.strokeColor = "${getColor}";
 			}
 					
 			var dist = this.distribution,

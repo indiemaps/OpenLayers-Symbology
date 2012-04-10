@@ -100,7 +100,7 @@ ol.thematic.LayerBase = OpenLayers.Class(
 			var layer = new OpenLayers.Layer.Vector( 'thematic', 
 			{
 				projection : new OpenLayers.Projection("EPSG:4326"),
-				displayInLayerSwitcher : false,
+				displayInLayerSwitcher : true,
 				visibility : false,
 				styleMap : styleMap
 			});

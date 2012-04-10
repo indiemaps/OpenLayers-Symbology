@@ -33,11 +33,7 @@
 			function init()
 			{
 				map = new OpenLayers.Map( 'map' );
-				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
-                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
-                    {layers: 'basic'},
-                    {isBaseLayer: true} );
-            	map.addLayer(layer);
+				map.addLayer(new OpenLayers.Layer.OSM());
             	
             	createThematicLayer();
 			};
@@ -74,7 +70,8 @@
 					indicator : 'isolineValue',
 					layer : thematicLayer.layer,
 					colorStrokes : true,
-					colorScheme : 'YlOrRd'
+					colorScheme : 'YlOrRd',
+					classed : false
 				});
 			};
 			

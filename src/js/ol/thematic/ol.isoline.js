@@ -84,9 +84,7 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 	updateClassification : function() 
 	{
 		this.updateDelaunay();
-		//this.updateIsolineFeatures();
 		this.updateInterpolation();
-		//this.updateIsolines();
 	},
 	
 	/* this only needs to be done once for a given point field */
@@ -99,11 +97,11 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 		
 		for ( var i = 0; i < features.length; i++ )
 		{
-			projectedPt = features[i].geometry.transform( new OpenLayers.Projection("EPSG:4326"), this.map.getProjectionObject() );
+			projectedPt = features[i].geometry;
 			vertex = new Vertex( projectedPt.x, projectedPt.y );
-			
 			vertex.feature = features[i];
 			
+			//console.log( projectedPt );
 			vertices.push( vertex );
 		}
 		
@@ -142,9 +140,9 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 			tri = this.triangles[i];
 			
 			triPoints = [ 
-				new OpenLayers.Geometry.Point( tri.v0.x, tri.v0.y ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") ), 
-				new OpenLayers.Geometry.Point( tri.v1.x, tri.v1.y ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") ), 
-				new OpenLayers.Geometry.Point( tri.v2.x, tri.v2.y ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") )
+				new OpenLayers.Geometry.Point( tri.v0.x, tri.v0.y ), 
+				new OpenLayers.Geometry.Point( tri.v1.x, tri.v1.y ), 
+				new OpenLayers.Geometry.Point( tri.v2.x, tri.v2.y )
 			];
 			
 			triGeom = new OpenLayers.Geometry.LineString( triPoints );
@@ -154,6 +152,8 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 		}
 		
 		triLayer.addFeatures( triFeatures );
+		
+		this.triLayer = triLayer;
 	},
 	
 	/* this calculates values along edges and then strings isolines between them */
@@ -240,14 +240,14 @@ ol.thematic.Isoline = OpenLayers.Class( ol.thematic.LayerBase,
 					// find the interpolated point along the second edge
 					x2 = (( intervalValue - edge2.v0.feature.attributes[this.indicator] ) / ( edge2.v1.feature.attributes[this.indicator] - edge2.v0.feature.attributes[this.indicator] )) * ( edge2.v1.x - edge2.v0.x ) + edge2.v0.x;
 					y2 = (( intervalValue - edge2.v0.feature.attributes[this.indicator] ) / ( edge2.v1.feature.attributes[this.indicator] - edge2.v0.feature.attributes[this.indicator] )) * ( edge2.v1.y - edge2.v0.y ) + edge2.v0.y;
-					
+										
 					// now add this segment to the isoline feature
 					isolineFeature.geometry.addComponents(
 						[ 
 							new OpenLayers.Geometry.LineString( 
 								[
-								new OpenLayers.Geometry.Point( x1, y1 ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") ), 
-								new OpenLayers.Geometry.Point( x2, y2 ).transform( this.map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326") )
+								new OpenLayers.Geometry.Point( x1, y1 ),
+								new OpenLayers.Geometry.Point( x2, y2 )
 								]
 							) 
 						]

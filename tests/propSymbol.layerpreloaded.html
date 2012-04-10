@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>OpenLayers-Symbology Choro-Cartogram example</title>
+		<title>OpenLayers-Symbology Proportional Symbol example</title>
 		
 		<!-- styles -->
 		<link rel="stylesheet" type="text/css" href="ext4/resources/css/ext-all.css" />
@@ -8,57 +8,57 @@
 		
 		<!-- external libraries ( ol, colorbrewer, jquery ) -->
 		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
-		<script type="text/javascript" src="../style/js/colorbrewer.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
-		
 		<script type="text/javascript" src="ext4/ext-all.js"></script>
 		
 		<!-- local symbology code -->
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
 		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
-		<script type="text/javascript" src="../src/js/ol/thematic/ol.cartogram.js"></script>
-		<script type="text/javascript" src="../src/js/ol/thematic/ol.choropleth.js"></script>
 		
 		<script type="text/javascript">
 		
 			Ext.require('Ext.slider.*');
 			
-			var map, thematicLayer,
+			var map, pointLayer,
 				url = '../data/json/states.geo.json',
-				indicator = 'POP2010',
-				classBreaksSlider, classSizeSlider,
-				legendWidth = 300;
+				indicator = 'POP2010';
 			
 			function init()
 			{
 				map = new OpenLayers.Map( 'map' );
 				map.addLayer(new OpenLayers.Layer.OSM());
             	
-            	createThematicLayer();
+            	createPointLayer();
 			};
 			
-			function createThematicLayer()
+			function createPointLayer()
 			{
-				thematicLayer = new ol.thematic.Cartogram( map, {
-					url 		: url,
+				pointLayer = new OpenLayers.Layer.Vector( 'features', 
+				{
+					strategies: [new OpenLayers.Strategy.Fixed()],
+				    protocol: new OpenLayers.Protocol.HTTP({
+				        url: url,
+				        format: new OpenLayers.Format.GeoJSON()
+				    }),
+				    style : { 'strokeColor' : '#ff0000', 'fillColor' : '#0000ff' }
+				});
+				map.addLayer( pointLayer );
+				
+				pointLayer.events.register( 'featuresadded', null, createPropLayer );
+			};
+			
+			function createPropLayer()
+			{
+				var propLayer = new ol.thematic.ProportionalSymbol( map, {
+					layer 		: pointLayer,
 					indicator 	: indicator,
-					classed : false,
-					defaultSymbolizer 	: { 'strokeColor' : '#ffffff', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : .5, 'fillColor' : '#0099cc' },
+					classed : true,
+					scaling : 'mathematical',
 					requestSuccess 		: function( request )
 					{
 						map.zoomToExtent( this.layer.getDataExtent(), true );
-						
-						colorCartogram();
 					}
-				});
-			};
-			
-			function colorCartogram()
-			{
-				var choroLayer = new ol.thematic.Choropleth( map, {
-					indicator : indicator,
-					layer : thematicLayer.layer
 				});
 			};
 			
@@ -69,10 +69,10 @@
 
 
 	<body onload="init()">
-		<h1>OpenLayers-Symbology Choro-Cartogram example</h1>
+		<h1>OpenLayers-Symbology Proportional Symbol example</h1>
 		
 		<div id="map"></div>
-		
+
 	</body>
 	
 </html>

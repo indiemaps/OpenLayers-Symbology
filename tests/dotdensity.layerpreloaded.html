@@ -24,11 +24,7 @@
 			function init()
 			{
 				map = new OpenLayers.Map( 'map' );
-				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
-                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
-                    {layers: 'basic'},
-                    {isBaseLayer: true} );
-            	map.addLayer(layer);
+				map.addLayer(new OpenLayers.Layer.OSM());
             	
             	createPolyLayer();
 			};
@@ -42,7 +38,7 @@
 				        url: url,
 				        format: new OpenLayers.Format.GeoJSON()
 				    }),
-				    
+				    style: { fillColor : "#000000", strokeColor : "#cccccc" }
 				    
 				});
 				map.addLayer( layer );
@@ -57,7 +53,7 @@
 					layer 		: layer,
 					indicator 	: indicator,
 					dotValue	: 150000,
-					defaultSymbolizer : { 'pointRadius' : 1, 'fillOpacity' : 1, 'fillColor' : '#000000', 'strokeWidth' : 0 },
+					defaultSymbolizer : { 'pointRadius' : 1, 'fillOpacity' : 1, 'fillColor' : '#ffffff', 'strokeWidth' : 0 },
 				});
 				
 				map.zoomToExtent( layer.getDataExtent() );

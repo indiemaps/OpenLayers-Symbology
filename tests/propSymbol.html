@@ -21,8 +21,8 @@
 			Ext.require('Ext.slider.*');
 			
 			var map, propLayer,
-				url = '../data/json/states.geo.json',
-				indicator = 'POP2010',
+				url = '../data/json/county_unemployment.geo.json',
+				indicator = 'unemployed',
 				format = new OpenLayers.Format.GeoJSON(), /* this is optional as GeoJSON is the default */
 				classBreaksSlider,
 				classSizeSlider,
@@ -31,11 +31,7 @@
 			function init()
 			{
 				map = new OpenLayers.Map( 'map' );
-				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
-                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
-                    {layers: 'basic'},
-                    {isBaseLayer: true} );
-            	map.addLayer(layer);
+            	map.addLayer(new OpenLayers.Layer.OSM());
             	
             	createPropLayer();
 			};

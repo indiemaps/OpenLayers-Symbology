@@ -1,0 +1,79 @@
+<html>
+	<head>
+		<title>OpenLayers-Symbology Weighted Isoline example</title>
+		
+		<!-- styles -->
+		<link rel="stylesheet" type="text/css" href="../style/css/ol.thematic.css" />
+		
+		<!-- external libraries ( ol, colorbrewer, jquery, delaunay ) -->
+		<script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+		
+		<script type="text/javascript" src="../lib/delaunay.js"></script>
+		
+		<!-- local symbology code -->
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.classification.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.thematic.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.isoline.js"></script>
+		<script type="text/javascript" src="../src/js/ol/thematic/ol.propsymbol.js"></script>
+		
+		<script type="text/javascript">
+					
+			var map, thematicLayer,
+				url = '../data/json/city.climate.json',
+				indicator = 'julyavetemp',
+				legendWidth = 300,
+				intervalSlider;
+			
+			function init()
+			{
+				map = new OpenLayers.Map( 'map' );
+				map.addControl( new OpenLayers.Control.LayerSwitcher() );
+				
+				var layer = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                    "http://vmap0.tiles.osgeo.org/wms/vmap0",
+                    {layers: 'basic'},
+                    {isBaseLayer: true} );
+            	map.addLayer(layer);
+            	
+            	createThematicLayer();
+			};
+			
+			function createThematicLayer()
+			{
+				thematicLayer = new ol.thematic.Isoline( map, {
+					url 		: url,
+					indicator 	: indicator,
+					interval : 2,
+					defaultSymbolizer : { 'pointRadius' : 3, 'fillOpacity' : 1, 'fillColor' : '#0099cc', 'strokeWidth' : 1, 'strokeColor' : '#0099cc' },
+					
+					requestSuccess 		: function( request )
+					{
+						map.zoomToExtent( this.layer.getDataExtent(), true );
+						
+						sizeIsolines();
+					}
+				});
+			};
+			
+			function sizeIsolines()
+			{
+				var propLayer = new ol.thematic.ProportionalSymbol( map, {
+					indicator : 'isolineValue',
+					layer : thematicLayer.layer,
+					sizeStrokes : true,
+					minSize : 0,
+					maxSize : 15
+				});
+			};
+		
+		</script>
+		
+	</head>
+	
+	<body onload="init()">
+		<h1>OpenLayers-Symbology Weighted Isoline example</h1>
+		
+		<div id="map"></div>
+		
+	</body>
+</html>
