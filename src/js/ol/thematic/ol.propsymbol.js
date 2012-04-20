@@ -11,6 +11,7 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 	sizeInterpolation : null, 
 	
 	sizeStrokes : false,
+	sizeAreas : true,
 	scaling : 'mathematical', 
 	
 	perceptualOptions : {
@@ -225,9 +226,13 @@ ol.thematic.ProportionalSymbol = OpenLayers.Class( ol.thematic.LayerBase,
 		};
 		
 		var symbolizer = {
-			pointRadius : "${getSize}",
 			graphicName : this.defaultSymbolizer.graphicName
 		};
+		
+		if ( this.sizeAreas )
+		{
+			symbolizer.pointRadius = "${getSize}";
+		}
 		
 		if ( this.sizeStrokes )
 		{

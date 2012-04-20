@@ -42,7 +42,7 @@
 				choroLayer = new ol.thematic.Choropleth( map, {
 					url 		: url,
 					indicator 	: indicator,
-					method 		: ol.thematic.Distribution.CLASSIFY_BY_EQUAL_INTERVALS,
+					method 		: ol.thematic.Distribution.CLASSIFY_BY_QUANTILE,
 					colorScheme : 'GnBu',
 					defaultSymbolizer 	: { 'strokeColor' : '#dddddd', 'strokeWidth' : 1, 'strokeOpacity' : .5, 'fillOpacity' : 1, 'fillColor' : '#cccccc' },
 					requestSuccess 		: function( request )

@@ -9,7 +9,9 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 	unclassedSchemeColors 	: null,						// not user-settable
 	colorScheme 			: 'YlGn', 					// a ColorBrewer color scheme abbreviation
 	colorInterpolation 		: null,
+	
 	colorStrokes			: false,
+	colorFills				: true,
 	
 	/* ol.thematic.LayerBase properties */
 	defaultSymbolizer 	: { 'fillOpacity' : 1 },
@@ -106,7 +108,7 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 			{
 				var rule = new OpenLayers.Rule(
 				{
-					symbolizer: {fillColor: this.colorInterpolation[i]},
+					symbolizer: {},
 					filter: new OpenLayers.Filter.Comparison(
 					{
 						type: OpenLayers.Filter.Comparison.BETWEEN,
@@ -115,6 +117,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 						upperBoundary: boundsArray[i + 1]
 					})
 				});
+				
+				if ( this.colorFills )
+				{
+					rule.symbolizer.fillColor = this.colorInterpolation[i];
+				}
 				
 				if ( this.colorStrokes )
 				{
@@ -150,8 +157,11 @@ ol.thematic.Choropleth = OpenLayers.Class( ol.thematic.LayerBase,
 				];
 			}
 						
-			symbolizer = {
-				fillColor : "${getColor}"
+			symbolizer = {};
+			
+			if ( this.colorFills )
+			{
+				symbolizer.fillColor = "${getColor}";
 			};
 			
 			if ( this.colorStrokes )

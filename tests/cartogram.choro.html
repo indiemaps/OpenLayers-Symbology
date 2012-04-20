@@ -24,7 +24,7 @@
 		
 			Ext.require('Ext.slider.*');
 			
-			var map, thematicLayer,
+			var map, cartogram, choropleth,
 				url = '../data/json/states.geo.json',
 				indicator = 'POP2010',
 				classBreaksSlider, classSizeSlider,
@@ -40,7 +40,7 @@
 			
 			function createThematicLayer()
 			{
-				thematicLayer = new ol.thematic.Cartogram( map, {
+				cartogram = new ol.thematic.Cartogram( map, {
 					url 		: url,
 					indicator 	: indicator,
 					classed : false,
@@ -49,19 +49,13 @@
 					{
 						map.zoomToExtent( this.layer.getDataExtent(), true );
 						
-						colorCartogram();
+						choropleth = new ol.thematic.Choropleth( map, {
+							indicator : indicator,
+							layer : this.layer
+						});
 					}
 				});
 			};
-			
-			function colorCartogram()
-			{
-				var choroLayer = new ol.thematic.Choropleth( map, {
-					indicator : indicator,
-					layer : thematicLayer.layer
-				});
-			};
-			
 			
 		</script>
 	</head>
