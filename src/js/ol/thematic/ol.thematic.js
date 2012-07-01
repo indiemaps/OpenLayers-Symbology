@@ -111,9 +111,11 @@ ol.thematic.LayerBase = OpenLayers.Class(
 
 		if ( this.url )
 		{
-			OpenLayers.loadURL(
-				this.url, '', this, this.onSuccess
-			)
+        	OpenLayers.Request.GET({
+				url: this.url,
+				scope: this,
+				callback: this.onSuccess
+			})
 		}
 		else if ( this.IS_OVERLAY_SYMBOLOGY )
 		{
