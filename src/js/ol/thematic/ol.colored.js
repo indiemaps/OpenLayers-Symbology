@@ -1,10 +1,12 @@
 /**
-* @requires ol.thematic.js, colorbrewer.js
+* @requires ol.thematic.js
 */
 
 ol.thematic.Colored = OpenLayers.Class( ol.thematic.LayerBase, 
 {	
+	/* color attribute */
 	attribute: 'color',
+
 	/* colored specifics */
 	colorStrokes			: false,
 	colorFills				: true,
@@ -17,6 +19,11 @@ ol.thematic.Colored = OpenLayers.Class( ol.thematic.LayerBase,
 	{
 		ol.thematic.LayerBase.prototype.initialize.apply( this, arguments );
 	},
+
+	processFeatures : function()
+	{
+		this.applyColor();
+	},
 	
 	updateOptions : function( newOptions )
 	{
@@ -28,7 +35,7 @@ ol.thematic.Colored = OpenLayers.Class( ol.thematic.LayerBase,
 		
 	},
 	
-	applyClassification : function( options )
+	applyColor : function( options )
 	{
 
 		var attribute = this.attribute;
@@ -63,5 +70,3 @@ ol.thematic.Colored = OpenLayers.Class( ol.thematic.LayerBase,
 	CLASS_NAME: "ol.thematic.Colored",
 	IS_OVERLAY_SYMBOLOGY : false
 });
-
-
